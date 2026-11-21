@@ -2,7 +2,7 @@
 
 App per imparare le capitali del mondo in stile Duolingo: si sceglie un continente e si segue un percorso a unità, dalle capitali più famose a quelle meno note, con lezioni sempre più difficili.
 
-**👉 Provala qui: [capitali-five.vercel.app](https://giramondo.vercel.app/)**
+**👉 Provala qui: [giramondo.vercel.app](https://giramondo.vercel.app/)**
 
 <img src="public/favicon.svg" alt="Icona di Giramondo" width="96">
 
