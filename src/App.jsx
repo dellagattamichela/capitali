@@ -5,12 +5,15 @@ import { AvatarEditor, Profile } from './Profile'
 import { Avatar } from './Avatar.jsx'
 import { avatarStats, full, newUnlocks } from './avatarData.js'
 
-const STEP_UI = {
-  easy: { icon: '/bullseye.png', label: 'Scelta multipla' },
-  medium: { icon: '/puzzle.png', label: 'Sillabe' },
-  hard: { icon: '/feather.png', label: 'Scrittura' },
-  review: { icon: '/trophy.png', label: 'Ripasso' },
-}
+// un'icona per passo, nell'ordine di STEPS (game.js): i primi due sono entrambi a scelta multipla,
+// il primo con le risposte suggerite, il secondo per allenarsi senza
+const STEP_UI = [
+  { icon: '/bullseye.png', label: 'Scelta multipla' },
+  { icon: '/dumbbell.png', label: 'Allenamento' },
+  { icon: '/puzzle.png', label: 'Sillabe' },
+  { icon: '/feather.png', label: 'Scrittura' },
+  { icon: '/trophy.png', label: 'Ripasso' },
+]
 const KEY = 'capitali-progress' // nome storico del progetto: cambiarlo cancellerebbe i progressi salvati
 const EMPTY = { done: [], parts: {}, xp: 0, streak: 0, best: 0, lastDay: null, last: null, name: '', avatar: {} }
 const TEST_LIVES = 3
@@ -178,14 +181,14 @@ function PathView({ path, progress, avatar, onStart, onBack }) {
             {nodes.filter((n) => n.u === u).map((n) => {
               const k = nodes.indexOf(n)
               const state = done.includes(n.id) ? 'done' : k === current ? 'current' : 'locked'
-              const { icon, label } = STEP_UI[n.type]
+              const { icon, label } = STEP_UI[n.s]
               const part = partOf(progress, n)
               const ring = state === 'current' && n.parts > 1 // i trattini: uno per lezione del passo
               return (
                 <button key={n.id} type="button" className={`node ${state} ${ring ? 'ring' : ''}`} style={{ '--k': k, '--n': n.parts, '--p': part / n.parts }}
                   disabled={state === 'locked'} onClick={() => onStart(n)}
                   aria-label={`${label}${state === 'done' ? ', completata' : state === 'locked' ? ', bloccata' : ring ? `, lezione ${part + 1} di ${n.parts}` : ''}`}>
-                  <img src={icon} alt="" />
+                  <img src={icon} alt="" className={n.type} />
                   {state === 'current' && <Avatar a={avatar} view="head" className="here" />}
                 </button>
               )

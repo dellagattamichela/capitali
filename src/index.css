@@ -53,7 +53,10 @@ button.card:not(:disabled):active { transform: translateY(2px); border-bottom-wi
 .jump:active { transform: translateY(3px); box-shadow: none; }
 .nodes { display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 60px 0 36px; }
 .node { position: relative; width: 72px; height: 66px; border: 0; border-radius: 50%; font-size: 1.8rem; background: var(--grey); box-shadow: 0 6px 0 #c9c9c9; translate: calc(sin(var(--k) * 45deg) * 70px) 0; }
-.node img { display: block; width: 38px; margin: auto; }
+.node img { display: block; width: 30px; margin: auto; }
+.node img.review { width: 38px; } /* il trofeo ha più spazio vuoto intorno nel disegno */
+/* trofeo giallo sul passo fatto, anch'esso giallo: un bordino bianco lo stacca */
+.node.done img.review { filter: drop-shadow(1.5px 0 #fff) drop-shadow(-1.5px 0 #fff) drop-shadow(0 1.5px #fff) drop-shadow(0 -1.5px #fff); }
 .node.done { background: #ffc800; box-shadow: 0 6px 0 #e0a800; }
 .node.current { background: var(--c); box-shadow: 0 6px 0 color-mix(in srgb, var(--c), #000 20%); }
 .node:disabled { filter: grayscale(1); opacity: .5; }
