@@ -100,7 +100,9 @@ button.card:not(:disabled):active { transform: translateY(2px); border-bottom-wi
 .footer.ok { background: var(--green-bg); border-color: transparent; color: var(--green-dark); }
 .footer.ko { background: var(--red-bg); border-color: transparent; color: var(--red-dark); }
 .footer-inner { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-.feedback { display: flex; flex-direction: column; font-size: 1.2rem; font-weight: 800; }
+.feedback { display: flex; align-items: center; gap: 12px; font-size: 1.2rem; font-weight: 800; }
+.feedback .avatar { width: 56px; flex: none; }
+.feedback > span { display: flex; flex-direction: column; }
 .feedback strong { font-size: 1.4rem; font-weight: 900; }
 
 .done { justify-content: center; text-align: center; }
@@ -126,12 +128,38 @@ button.card:not(:disabled):active { transform: translateY(2px); border-bottom-wi
 .stat strong { display: block; font-size: 1.4rem; }
 .stat small { color: var(--muted); font-weight: 700; font-size: .9rem; }
 
-.dice { margin-left: auto; border: 0; background: none; font-size: 1.8rem; }
+.dice { border: 0; background: none; font-size: 1.8rem; }
 .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
 .tabs button { flex: none; border: 2px solid var(--grey); border-radius: 12px; background: #fff; padding: 8px 12px; font-weight: 800; color: var(--muted); }
 .tabs button[aria-pressed="true"] { border-color: var(--blue-border); background: var(--blue-bg); color: var(--blue); }
 .choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; }
-.choice { display: grid; place-items: center; padding: 6px; }
+.choice { display: grid; place-items: center; gap: 4px; padding: 6px; }
 .choice.selected { border-color: var(--blue-border); background: var(--blue-bg); }
 .choice .avatar { width: 100%; }
 .swatch { width: 52px; aspect-ratio: 1; border-radius: 50%; border: 2px solid rgb(0 0 0 / .1); }
+
+/* editor dell'avatar */
+.btn.small { padding: 8px 14px; font-size: .9rem; }
+.editor-top { position: sticky; top: 0; z-index: 2; display: flex; flex-direction: column; gap: 12px; margin: -24px -16px 0; padding: 16px 16px 12px; background: #fff; border-bottom: 2px solid var(--grey); }
+.editor-top .dice { margin-left: auto; }
+.editor-top .avatar.big { width: 140px; animation: pop .25s ease-out; }
+@keyframes pop { from { transform: scale(.9); } }
+.editor section { display: flex; flex-direction: column; gap: 8px; }
+.editor section h2 { font-size: .9rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.choice:disabled { cursor: not-allowed; }
+.choice:disabled .avatar { filter: grayscale(1); opacity: .5; }
+.lock { font-size: .7rem; line-height: 1.15; color: var(--muted); font-weight: 800; }
+img.swatch { object-fit: cover; }
+.empty { margin: 0; color: var(--muted); font-weight: 700; }
+
+/* avatar nel gioco */
+.here { position: absolute; left: calc(100% + 10px); top: 50%; translate: 0 -50%; width: 46px; border: 3px solid #fff; box-shadow: 0 2px 0 var(--grey); }
+.unlock { display: flex; align-items: center; gap: 12px; text-align: left; border-color: #ce82ff; }
+.unlock .avatar { width: 60px; flex: none; }
+.unlock span { flex: 1; display: flex; flex-direction: column; }
+.unlock small { color: #a560e8; font-size: .8rem; }
+.unlock strong { text-transform: capitalize; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

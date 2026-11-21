@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { PATHS } from './data'
 import { STEPS, XP_PER_LESSON, finishLesson, isOpen, jumpTest, learned, makeLesson, nodesOf, normalize, streakOn, today } from './game'
-import { Avatar, AvatarEditor, Profile } from './Profile'
+import { AvatarEditor, Profile } from './Profile'
+import { Avatar } from './Avatar.jsx'
+import { avatarStats, full, newUnlocks } from './avatarData.js'
 
 const STEP_UI = {
   easy: { icon: '🎯', label: 'Scelta multipla' },
@@ -53,7 +55,7 @@ export default function App() {
 
   if (pathId === 'profilo') {
     return view === 'avatar'
-      ? <AvatarEditor avatar={progress.avatar} onChange={(avatar) => update({ avatar })} onBack={back} />
+      ? <AvatarEditor avatar={progress.avatar} stats={avatarStats(progress)} onSave={(avatar) => update({ avatar })} onBack={back} />
       : <Profile progress={progress} onChange={update} onBack={back} onEdit={() => {
           location.hash = 'profilo/avatar'
         }} />
@@ -67,14 +69,19 @@ export default function App() {
 
   if (path && view === 'lezione' && lesson?.path === path) {
     const { node } = lesson
-    const finish = () => setProgress((p) => finishLesson(p, path.id, node.clears ?? [node.id], today()))
+    const finish = () => {
+      const next = finishLesson(progress, path.id, node.clears ?? [node.id], today())
+      setLesson({ ...lesson, unlocks: newUnlocks(avatarStats(progress), avatarStats(next)) })
+      setProgress(next)
+    }
     const exit = () => {
       setLesson(null)
       history.back()
     }
-    return <Lesson key={lesson.id} {...lesson} onFinish={finish} onExit={exit} />
+    const wear = (slot, name) => update({ avatar: { ...full(progress.avatar), [slot]: name } })
+    return <Lesson key={lesson.id} {...lesson} avatar={progress.avatar} onFinish={finish} onWear={wear} onExit={exit} />
   }
-  if (path) return <PathView path={path} done={progress.done} onStart={(n) => start(path, n)} onBack={back} />
+  if (path) return <PathView path={path} done={progress.done} avatar={progress.avatar} onStart={(n) => start(path, n)} onBack={back} />
   return (
     <Home progress={progress}
       onOpen={(id) => {
@@ -100,7 +107,7 @@ function Home({ progress, onOpen, onStart }) {
         <span className="streak" title="Giorni di fila">🔥 {streakOn(progress, today())}</span>
         <span className="xp">⚡ {progress.xp} XP</span>
         <button type="button" className="me" onClick={() => onOpen('profilo')} aria-label="Profilo">
-          <Avatar a={progress.avatar} />
+          <Avatar a={progress.avatar} view="head" />
         </button>
       </header>
       <h1>🌍 Capitali</h1>
@@ -142,7 +149,7 @@ function Home({ progress, onOpen, onStart }) {
   )
 }
 
-function PathView({ path, done, onStart, onBack }) {
+function PathView({ path, done, avatar, onStart, onBack }) {
   const nodes = nodesOf(path)
   const current = nodes.findIndex((n) => !done.includes(n.id))
   useEffect(() => {
@@ -177,6 +184,7 @@ function PathView({ path, done, onStart, onBack }) {
                   disabled={state === 'locked'} onClick={() => onStart(n)}
                   aria-label={`${label}${state === 'done' ? ', completata' : state === 'locked' ? ', bloccata' : ''}`}>
                   {icon}
+                  {state === 'current' && <Avatar a={avatar} view="head" className="here" />}
                 </button>
               )
             })}
@@ -189,7 +197,7 @@ function PathView({ path, done, onStart, onBack }) {
 
 const emptyFor = (q) => (q?.level === 'medium' ? [] : '')
 
-function Lesson({ path, node, questions, onFinish, onExit }) {
+function Lesson({ path, node, questions, avatar, unlocks = [], onFinish, onWear, onExit }) {
   const [queue, setQueue] = useState(questions) // le domande sbagliate si ripetono in fondo
   const [i, setI] = useState(0)
   const [answer, setAnswer] = useState(emptyFor(questions[0]))
@@ -201,7 +209,7 @@ function Lesson({ path, node, questions, onFinish, onExit }) {
   if (isTest && mistakes >= TEST_LIVES) {
     return (
       <main className="done">
-        <div className="trophy">💔</div>
+        <Avatar a={avatar} mood="triste" className="big" />
         <h1 className="fail">Test non superato</h1>
         <p className="subtitle">Nessun problema: segui il percorso e riprova quando vuoi.</p>
         <button className="btn green" onClick={onExit}>Torna al percorso</button>
@@ -212,12 +220,22 @@ function Lesson({ path, node, questions, onFinish, onExit }) {
   if (i === queue.length) {
     return (
       <main className="done">
-        <div className="trophy">🏆</div>
+        <Avatar a={avatar} mood="felice" className="big" />
         <h1>{isTest ? 'Test superato!' : 'Lezione completata!'}</h1>
         <div className="row">
           <div className="card score"><small>XP</small><strong>+{XP_PER_LESSON}</strong></div>
           <div className="card score"><small>Precisione</small><strong>{Math.round((100 * questions.length) / queue.length)}%</strong></div>
         </div>
+        {unlocks.map(({ slot, name }) => {
+          const worn = full(avatar)[slot] === name
+          return (
+            <div key={name} className="card unlock">
+              <Avatar a={{ ...avatar, [slot]: name }} view="head" />
+              <span><small>🎁 Nuovo oggetto per l'avatar!</small><strong>{name}</strong></span>
+              <button type="button" className="btn ghost small" disabled={worn} onClick={() => onWear(slot, name)}>{worn ? 'Indossato' : 'Indossa'}</button>
+            </div>
+          )
+        })}
         <button className="btn green" onClick={onExit}>Continua</button>
       </main>
     )
@@ -301,8 +319,11 @@ function Lesson({ path, node, questions, onFinish, onExit }) {
         <div className="footer-inner">
           {done && (
             <div className="feedback" role="status">
-              <strong>{result ? 'Ottimo! 🎉' : 'Risposta corretta:'}</strong>
-              {!result && <span>{expected}</span>}
+              <Avatar a={avatar} mood={result ? 'felice' : 'triste'} view="head" />
+              <span>
+                <strong>{result ? 'Ottimo! 🎉' : 'Risposta corretta:'}</strong>
+                {!result && <span>{expected}</span>}
+              </span>
             </div>
           )}
           <button className={`btn ${done && !result ? 'red' : 'green'}`} disabled={!done && !normalize(given)}>
