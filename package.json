@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node --test"
+    "test": "node --test",
+    "icons": "for p in 512:icon-512.png 192:icon-192.png 180:apple-touch-icon.png; do s=${p%%:*}; google-chrome --headless=new --hide-scrollbars --force-device-scale-factor=1 --window-size=$s,$s --screenshot=public/${p#*:} \"file://$PWD/public/favicon.svg\"; done"
   },
   "dependencies": {
     "react": "^19.3.1",

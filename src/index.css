@@ -27,7 +27,8 @@ button.card:not(:disabled):active { transform: translateY(2px); border-bottom-wi
 .me { margin-left: auto; width: 48px; padding: 0; border: 2px solid var(--grey); border-radius: 50%; background: none; }
 .streak { color: #ff9600; }
 .xp { color: #ffc800; }
-.home h1 { font-size: 2.5rem; color: var(--green); }
+.home h1 { display: flex; align-items: center; gap: 12px; font-size: 2.5rem; color: var(--green); }
+.logo { width: 56px; border-radius: 16px; border: 2px solid var(--grey); border-bottom-width: 4px; }
 .continue { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-color: var(--green); }
 .continue small, .path-card small { display: block; color: var(--muted); font-weight: 700; font-size: .9rem; }
 .path-card { display: flex; align-items: center; gap: 16px; text-align: left; }
