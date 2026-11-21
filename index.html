@@ -7,14 +7,14 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="Giramondo" />
-    <!-- barra di stato/del browser del colore dello sfondo (--bg), così si fonde con l'header -->
-    <meta name="theme-color" content="#fafafa" />
+    <!-- barra di stato/del browser bianca come l'header della home (.stats), così sono un pezzo solo -->
+    <meta name="theme-color" content="#ffffff" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet" />
     <style>
       /* schermata iniziale: il mappamondo e la puntina che ci cade sopra formano l'icona; la toglie main.jsx */
-      #splash { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: #fafafa; } /* come lo sfondo dell'app (--bg) */
+      #splash { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: #fff; } /* bianco come la barra di stato (theme-color) e background_color del manifest */
       #splash svg { width: 240px; overflow: visible; } /* 240px: 1 unità del disegno = 240/512 px, conta per la caduta */
       /* dalla home dell'iPhone la pagina comincia sotto la barra di stato: senza alzarlo il disegno sembra basso */
       #splash svg { translate: 0 -32px; }

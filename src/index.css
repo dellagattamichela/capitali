@@ -3,13 +3,13 @@
   --red: #ff4b4b; --red-dark: #ea2b2b; --red-bg: #ffdfe0;
   --blue: #1cb0f6; --blue-bg: #ddf4ff; --blue-border: #84d8ff;
   --grey: #e5e5e5; --text: #4b4b4b; --muted: #777;
-  --bg: #fafafa; /* bianco appena grigio, come la schermata iniziale (index.html): le card bianche ci risaltano sopra */
+  --bg: #fafafa; /* bianco appena grigio: le card bianche ci risaltano sopra */
   font-family: 'Nunito', system-ui, sans-serif;
   color: var(--text);
   background: var(--bg);
 }
 * { box-sizing: border-box; }
-body { margin: 0; }
+body { margin: 0; overflow-x: clip; } /* 100vw dell'header conta anche la scrollbar del computer: niente scroll orizzontale */
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: default; }
@@ -24,7 +24,15 @@ h1, h2 { font-weight: 900; margin: 0; }
 button.card:not(:disabled):active { transform: translateY(2px); border-bottom-width: 2px; }
 
 /* home */
-.stats { display: flex; align-items: center; gap: 20px; font-weight: 900; font-size: 1.2rem; }
+/* header bianco attaccato in cima, come la barra di stato (theme-color in index.html): i margini negativi
+   lo allargano a tutto lo schermo anche oltre i 600px di main (tablet), il padding riporta icone e profilo
+   in colonna con le card; la linea sotto lo stacca dal resto */
+.home { padding-top: 0; }
+.stats { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 20px; font-weight: 900; font-size: 1.2rem; margin: 0 calc(50% - 50vw); padding: 12px calc(50vw - 50%); background: #fff; border-bottom: 2px solid var(--grey); }
+/* ombra sotto l'header che compare nei primi 24px di scorrimento: animazione legata allo scroll, niente JS.
+   animation-timeline va dopo lo shorthand animation, che altrimenti la azzera */
+.stats { animation: lift linear both; animation-timeline: scroll(); animation-range: 0 24px; }
+@keyframes lift { to { box-shadow: 0 4px 12px rgb(0 0 0 / .08); } }
 .me { margin-left: auto; width: 48px; padding: 0; border: 2px solid var(--grey); border-radius: 50%; background: none; }
 .streak { color: #ff9600; }
 .xp { color: #ffc800; }
