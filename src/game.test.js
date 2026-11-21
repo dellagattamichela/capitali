@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { syllables, normalize, makeQuestion, makeLesson, nodesOf, unitDone, finishLesson, streakOn } from './game.js'
+import { syllables, normalize, makeQuestion, makeLesson, nodesOf, unitDone, finishLesson, streakOn, jumpTest, isOpen } from './game.js'
 import { PATHS } from './data.js'
 
 const ALL = PATHS.flatMap((p) => p.units.flatMap((u) => u.countries))
@@ -9,6 +9,7 @@ test('sillabe', () => {
   assert.deepEqual(syllables('Londra'), ['lon', 'dra'])
   assert.deepEqual(syllables('Stoccolma'), ['stoc', 'col', 'ma'])
   assert.deepEqual(syllables('Buenos Aires'), ['bue', 'nos', 'ai', 'res'])
+  assert.deepEqual(syllables('Port-au-Prince'), ['port', 'au', 'prin', 'ce'])
 })
 
 test('le sillabe ricompongono ogni capitale', () => {
@@ -32,6 +33,9 @@ test('dati dei percorsi', () => {
       assert.ok(PATHS.find((x) => x.id === pid)?.units.some((u) => u.id === uid), p.unlockedBy)
     }
   }
+  const world = PATHS.filter((p) => !p.unlockedBy).flatMap((p) => p.units.flatMap((u) => u.countries.map((c) => c.code)))
+  assert.equal(new Set(world).size, world.length, 'paese in due continenti')
+  assert.equal(world.length, 194) // membri ONU + Vaticano
 })
 
 test('domande', () => {
@@ -41,6 +45,9 @@ test('domande', () => {
   assert.ok(easy.options.includes(all[0].capital))
   const medium = makeQuestion(all[0], 'medium', all)
   for (const s of syllables(all[0].capital)) assert.ok(medium.tiles.includes(s))
+  const reverse = makeQuestion(all[0], 'reverse', all)
+  assert.equal(reverse.options.length, 4)
+  assert.ok(reverse.options.includes(all[0].name))
 })
 
 test('lezioni del percorso', () => {
@@ -55,22 +62,29 @@ test('lezioni del percorso', () => {
   assert.ok(intro.every((q) => q.level === 'easy' && q.options.length === 4))
 
   const review = makeLesson(path, nodes[9])
-  assert.deepEqual(new Set(review.map((q) => q.level)), new Set(['easy', 'medium', 'hard']))
+  assert.deepEqual(new Set(review.map((q) => q.level)), new Set(['easy', 'medium', 'hard', 'reverse']))
   assert.ok(review.some((q) => path.units[0].countries.some((c) => c.name === q.name)), 'il ripasso include le unità precedenti')
   assert.ok(review.every((q) => !q.isNew))
+
+  const jump = jumpTest(path, 1)
+  assert.deepEqual(jump.clears, nodes.filter((n) => n.u === 0).map((n) => n.id))
+  const test = makeLesson(path, jump)
+  assert.ok(test.every((q) => path.units[0].countries.some((c) => c.name === q.name)), 'il test copre solo le unità saltate')
+  assert.ok(unitDone('x.a', finishLesson({ done: [], xp: 0, streak: 0 }, 'x', jump.clears, '2026-11-30').done))
 })
 
 test('progressi e serie di giorni', () => {
   let p = { done: [], xp: 0, streak: 0, lastDay: null }
-  p = finishLesson(p, 'x', 'x.a.0', '2026-11-30')
-  p = finishLesson(p, 'x', 'x.a.0', '2026-11-30') // stessa lezione, stesso giorno
+  p = finishLesson(p, 'x', ['x.a.0'], '2026-11-30')
+  p = finishLesson(p, 'x', ['x.a.0'], '2026-11-30') // stessa lezione, stesso giorno
   assert.deepEqual([p.done, p.xp, p.streak, p.last], [['x.a.0'], 20, 1, 'x'])
   assert.ok(!unitDone('x.a', p.done))
 
-  p = finishLesson(p, 'x', 'x.a.4', '2026-12-01') // il giorno dopo, a cavallo del mese
+  p = finishLesson(p, 'x', ['x.a.4'], '2026-12-01') // il giorno dopo, a cavallo del mese
   assert.equal(p.streak, 2)
   assert.ok(unitDone('x.a', p.done))
+  assert.ok(isOpen({ unlockedBy: 'x.a' }, p.done) && !isOpen({ unlockedBy: 'x.b' }, p.done))
   assert.equal(streakOn(p, '2026-12-02'), 2)
   assert.equal(streakOn(p, '2026-12-03'), 0)
-  assert.equal(finishLesson(p, 'x', 'x.b.0', '2026-12-05').streak, 1)
+  assert.equal(finishLesson(p, 'x', ['x.b.0'], '2026-12-05').streak, 1)
 })

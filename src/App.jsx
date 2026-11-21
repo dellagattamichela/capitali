@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PATHS } from './data'
-import { XP_PER_LESSON, finishLesson, makeLesson, nodesOf, normalize, streakOn, today, unitDone } from './game'
+import { STEPS, XP_PER_LESSON, finishLesson, isOpen, jumpTest, makeLesson, nodesOf, normalize, streakOn, today, unitDone } from './game'
 
 const STEP_UI = {
   easy: { icon: '🎯', label: 'Scelta multipla' },
@@ -10,6 +10,7 @@ const STEP_UI = {
 }
 const KEY = 'capitali-progress'
 const EMPTY = { done: [], xp: 0, streak: 0, lastDay: null, last: null }
+const TEST_LIVES = 3
 
 function load() {
   try {
@@ -19,26 +20,58 @@ function load() {
   }
 }
 
+// navigazione nell'hash, così funziona il tasto indietro: "" = home, "#europa" = percorso, "#europa/lezione"
+// aprendo l'app su un percorso si rimette la home sotto nella cronologia: "indietro" porta sempre lì
+if (location.hash) {
+  const [id] = location.hash.slice(1).split('/')
+  history.replaceState(null, '', location.pathname)
+  history.pushState(null, '', `#${id}`)
+}
+
+function useHash() {
+  const [hash, setHash] = useState(location.hash)
+  useEffect(() => {
+    const update = () => setHash(location.hash)
+    window.addEventListener('hashchange', update)
+    return () => window.removeEventListener('hashchange', update)
+  }, [])
+  return hash.slice(1).split('/')
+}
+
 export default function App() {
   const [progress, setProgress] = useState(load)
-  const [pathId, setPathId] = useState(null)
   const [lesson, setLesson] = useState(null)
+  const [pathId, view] = useHash()
   useEffect(() => {
     localStorage.setItem(KEY, JSON.stringify(progress))
   }, [progress])
 
-  const start = (path, node) => {
-    setPathId(path.id) // uscendo dalla lezione si torna al percorso
-    setLesson({ path, node, questions: makeLesson(path, node), id: Date.now() })
+  const path = PATHS.find((p) => p.id === pathId && isOpen(p, progress.done))
+  const start = (p, node) => {
+    setLesson({ path: p, node, questions: makeLesson(p, node), id: Date.now() })
+    location.hash = `${p.id}/lezione`
   }
 
-  if (lesson) {
-    const finish = () => setProgress((p) => finishLesson(p, lesson.path.id, lesson.node.id, today()))
-    return <Lesson key={lesson.id} {...lesson} onFinish={finish} onExit={() => setLesson(null)} />
+  if (path && view === 'lezione' && lesson?.path === path) {
+    const { node } = lesson
+    const finish = () => setProgress((p) => finishLesson(p, path.id, node.clears ?? [node.id], today()))
+    const exit = () => {
+      setLesson(null)
+      history.back()
+    }
+    return <Lesson key={lesson.id} {...lesson} onFinish={finish} onExit={exit} />
   }
-  const path = PATHS.find((p) => p.id === pathId)
-  if (path) return <PathView path={path} done={progress.done} onStart={(n) => start(path, n)} onBack={() => setPathId(null)} />
-  return <Home progress={progress} onOpen={setPathId} onStart={start} />
+  if (path) return <PathView path={path} done={progress.done} onStart={(n) => start(path, n)} onBack={() => history.back()} />
+  return (
+    <Home progress={progress}
+      onOpen={(id) => {
+        location.hash = id
+      }}
+      onStart={(p, n) => {
+        history.pushState(null, '', `#${p.id}`) // uscendo dalla lezione si torna al percorso
+        start(p, n)
+      }} />
+  )
 }
 
 const count = (units) => units.reduce((n, u) => n + u.countries.length, 0)
@@ -67,7 +100,7 @@ function Home({ progress, onOpen, onStart }) {
       )}
 
       {PATHS.map((p) => {
-        const open = !p.unlockedBy || unitDone(p.unlockedBy, done)
+        const open = isOpen(p, done)
         const nodes = nodesOf(p)
         const pct = (nodes.filter((n) => done.includes(n.id)).length / nodes.length) * 100
         const learned = count(p.units.filter((u) => unitDone(`${p.id}.${u.id}`, done)))
@@ -109,11 +142,16 @@ function PathView({ path, done, onStart, onBack }) {
       </header>
       {path.units.map((unit, u) => (
         <section key={unit.id} className="unit">
-          <h2>
-            <small>Unità {u + 1}</small>
-            {unit.title}
-            <span>{unit.countries.map((c) => c.name).join(', ')}</span>
-          </h2>
+          <div className="banner">
+            <h2>
+              <small>Unità {u + 1}</small>
+              {unit.title}
+              <span>{unit.countries.map((c) => c.name).join(', ')}</span>
+            </h2>
+            {current !== -1 && u * STEPS.length > current && (
+              <button type="button" className="jump" onClick={() => onStart(jumpTest(path, u))}>Salta qui</button>
+            )}
+          </div>
           <div className="nodes">
             {nodes.filter((n) => n.u === u).map((n) => {
               const k = nodes.indexOf(n)
@@ -136,18 +174,31 @@ function PathView({ path, done, onStart, onBack }) {
 
 const emptyFor = (q) => (q?.level === 'medium' ? [] : '')
 
-function Lesson({ path, questions, onFinish, onExit }) {
+function Lesson({ path, node, questions, onFinish, onExit }) {
   const [queue, setQueue] = useState(questions) // le domande sbagliate si ripetono in fondo
   const [i, setI] = useState(0)
   const [answer, setAnswer] = useState(emptyFor(questions[0]))
   const [result, setResult] = useState(null) // null = non ancora verificato, true/false = esito
   const [score, setScore] = useState(0)
+  const isTest = node.type === 'test'
+  const mistakes = queue.length - questions.length
+
+  if (isTest && mistakes >= TEST_LIVES) {
+    return (
+      <main className="done">
+        <div className="trophy">💔</div>
+        <h1 className="fail">Test non superato</h1>
+        <p className="subtitle">Nessun problema: segui il percorso e riprova quando vuoi.</p>
+        <button className="btn green" onClick={onExit}>Torna al percorso</button>
+      </main>
+    )
+  }
 
   if (i === queue.length) {
     return (
       <main className="done">
         <div className="trophy">🏆</div>
-        <h1>Lezione completata!</h1>
+        <h1>{isTest ? 'Test superato!' : 'Lezione completata!'}</h1>
         <div className="row">
           <div className="card score"><small>XP</small><strong>+{XP_PER_LESSON}</strong></div>
           <div className="card score"><small>Precisione</small><strong>{Math.round((100 * questions.length) / queue.length)}%</strong></div>
@@ -158,6 +209,8 @@ function Lesson({ path, questions, onFinish, onExit }) {
   }
 
   const q = queue[i]
+  const reverse = q.level === 'reverse'
+  const expected = reverse ? q.name : q.capital
   const given = q.level === 'medium' ? answer.map((t) => q.tiles[t]).join('') : answer
   const done = result !== null
 
@@ -165,7 +218,7 @@ function Lesson({ path, questions, onFinish, onExit }) {
     e.preventDefault()
     if (!done) {
       if (!normalize(given)) return
-      const ok = normalize(given) === normalize(q.capital)
+      const ok = normalize(given) === normalize(expected)
       setResult(ok)
       if (ok) setScore((s) => s + 1)
     } else {
@@ -183,22 +236,25 @@ function Lesson({ path, questions, onFinish, onExit }) {
       <header className="top">
         <button type="button" className="close" onClick={onExit} aria-label="Esci">✕</button>
         <div className="progress"><div style={{ width: `${(score / questions.length) * 100}%` }} /></div>
+        {isTest && <span className="lives" aria-label="Vite rimaste">❤️ {TEST_LIVES - mistakes - (result === false ? 1 : 0)}</span>}
       </header>
 
       <section className="question" key={i}>
-        <h2>{path.question ?? 'Qual è la capitale?'}</h2>
+        <h2>{reverse ? (path.reverse ?? 'Di quale paese è la capitale?') : (path.question ?? 'Qual è la capitale?')}</h2>
         {q.isNew && <p className="tip"><span className="badge">Nuovo</span> La risposta è <strong>{q.capital}</strong></p>}
         <div className="country">
-          {/* decorativa: il nome è già nel fumetto (e per le regioni è il tricolore) */}
-          <img src={`https://flagcdn.com/w320/${q.code}.png`} srcSet={`https://flagcdn.com/w640/${q.code}.png 2x`} alt="" />
-          <span className="bubble">{q.name}</span>
+          {/* la bandiera è decorativa (il nome è nel fumetto); al contrario la si nasconde, darebbe la risposta */}
+          {reverse
+            ? <span className="landmark" aria-hidden="true">🏛️</span>
+            : <img src={`https://flagcdn.com/w320/${q.code}.png`} srcSet={`https://flagcdn.com/w640/${q.code}.png 2x`} alt="" />}
+          <span className="bubble">{reverse ? q.capital : q.name}</span>
         </div>
 
-        {q.level === 'easy' && (
+        {q.options && (
           <div className="options">
             {q.options.map((o) => (
               <button type="button" key={o} disabled={done} onClick={() => setAnswer(o)}
-                className={`card option ${answer === o ? 'selected' : ''} ${done && o === q.capital ? 'right' : ''} ${done && answer === o && !result ? 'wrong' : ''}`}>
+                className={`card option ${answer === o ? 'selected' : ''} ${done && o === expected ? 'right' : ''} ${done && answer === o && !result ? 'wrong' : ''}`}>
                 {o}
               </button>
             ))}
@@ -231,7 +287,7 @@ function Lesson({ path, questions, onFinish, onExit }) {
           {done && (
             <div className="feedback" role="status">
               <strong>{result ? 'Ottimo! 🎉' : 'Risposta corretta:'}</strong>
-              {!result && <span>{q.capital}</span>}
+              {!result && <span>{expected}</span>}
             </div>
           )}
           <button className={`btn ${done && !result ? 'red' : 'green'}`} disabled={!done && !normalize(given)}>
