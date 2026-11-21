@@ -1,0 +1,47 @@
+// [codice ISO (per la bandiera), paese, capitale]
+export const COUNTRIES = [
+  // Europa
+  ['it', 'Italia', 'Roma'], ['fr', 'Francia', 'Parigi'], ['de', 'Germania', 'Berlino'],
+  ['es', 'Spagna', 'Madrid'], ['pt', 'Portogallo', 'Lisbona'], ['gb', 'Regno Unito', 'Londra'],
+  ['ie', 'Irlanda', 'Dublino'], ['nl', 'Paesi Bassi', 'Amsterdam'], ['be', 'Belgio', 'Bruxelles'],
+  ['lu', 'Lussemburgo', 'Lussemburgo'], ['ch', 'Svizzera', 'Berna'], ['at', 'Austria', 'Vienna'],
+  ['dk', 'Danimarca', 'Copenaghen'], ['se', 'Svezia', 'Stoccolma'], ['no', 'Norvegia', 'Oslo'],
+  ['fi', 'Finlandia', 'Helsinki'], ['is', 'Islanda', 'Reykjavík'], ['pl', 'Polonia', 'Varsavia'],
+  ['cz', 'Repubblica Ceca', 'Praga'], ['sk', 'Slovacchia', 'Bratislava'], ['hu', 'Ungheria', 'Budapest'],
+  ['si', 'Slovenia', 'Lubiana'], ['hr', 'Croazia', 'Zagabria'], ['ba', 'Bosnia ed Erzegovina', 'Sarajevo'],
+  ['rs', 'Serbia', 'Belgrado'], ['me', 'Montenegro', 'Podgorica'], ['mk', 'Macedonia del Nord', 'Skopje'],
+  ['al', 'Albania', 'Tirana'], ['gr', 'Grecia', 'Atene'], ['bg', 'Bulgaria', 'Sofia'],
+  ['ro', 'Romania', 'Bucarest'], ['md', 'Moldavia', 'Chișinău'], ['ua', 'Ucraina', 'Kiev'],
+  ['by', 'Bielorussia', 'Minsk'], ['ru', 'Russia', 'Mosca'], ['ee', 'Estonia', 'Tallinn'],
+  ['lv', 'Lettonia', 'Riga'], ['lt', 'Lituania', 'Vilnius'], ['mt', 'Malta', 'La Valletta'],
+  ['cy', 'Cipro', 'Nicosia'], ['tr', 'Turchia', 'Ankara'], ['ad', 'Andorra', 'Andorra la Vella'],
+  ['sm', 'San Marino', 'San Marino'], ['li', 'Liechtenstein', 'Vaduz'],
+  // Americhe
+  ['us', 'Stati Uniti', 'Washington'], ['ca', 'Canada', 'Ottawa'], ['mx', 'Messico', 'Città del Messico'],
+  ['cu', 'Cuba', "L'Avana"], ['jm', 'Giamaica', 'Kingston'], ['cr', 'Costa Rica', 'San José'],
+  ['br', 'Brasile', 'Brasília'], ['ar', 'Argentina', 'Buenos Aires'], ['cl', 'Cile', 'Santiago'],
+  ['pe', 'Perù', 'Lima'], ['co', 'Colombia', 'Bogotà'], ['ve', 'Venezuela', 'Caracas'],
+  ['ec', 'Ecuador', 'Quito'], ['uy', 'Uruguay', 'Montevideo'], ['py', 'Paraguay', 'Asunción'],
+  // Asia
+  ['cn', 'Cina', 'Pechino'], ['jp', 'Giappone', 'Tokyo'], ['kr', 'Corea del Sud', 'Seul'],
+  ['kp', 'Corea del Nord', 'Pyongyang'], ['in', 'India', 'Nuova Delhi'], ['pk', 'Pakistan', 'Islamabad'],
+  ['bd', 'Bangladesh', 'Dacca'], ['th', 'Thailandia', 'Bangkok'], ['vn', 'Vietnam', 'Hanoi'],
+  ['ph', 'Filippine', 'Manila'], ['id', 'Indonesia', 'Giacarta'], ['my', 'Malesia', 'Kuala Lumpur'],
+  ['mn', 'Mongolia', 'Ulan Bator'], ['np', 'Nepal', 'Katmandu'], ['af', 'Afghanistan', 'Kabul'],
+  ['ir', 'Iran', 'Teheran'], ['iq', 'Iraq', 'Baghdad'], ['sa', 'Arabia Saudita', 'Riad'],
+  ['jo', 'Giordania', 'Amman'], ['lb', 'Libano', 'Beirut'], ['sy', 'Siria', 'Damasco'],
+  ['ae', 'Emirati Arabi Uniti', 'Abu Dhabi'], ['qa', 'Qatar', 'Doha'], ['kz', 'Kazakistan', 'Astana'],
+  ['uz', 'Uzbekistan', 'Tashkent'], ['ge', 'Georgia', 'Tbilisi'], ['am', 'Armenia', 'Erevan'],
+  ['az', 'Azerbaigian', 'Baku'],
+  // Africa
+  ['eg', 'Egitto', 'Il Cairo'], ['ma', 'Marocco', 'Rabat'], ['dz', 'Algeria', 'Algeri'],
+  ['tn', 'Tunisia', 'Tunisi'], ['ly', 'Libia', 'Tripoli'], ['ng', 'Nigeria', 'Abuja'],
+  ['ke', 'Kenya', 'Nairobi'], ['et', 'Etiopia', 'Addis Abeba'], ['za', 'Sudafrica', 'Pretoria'],
+  ['gh', 'Ghana', 'Accra'], ['sn', 'Senegal', 'Dakar'], ['tz', 'Tanzania', 'Dodoma'],
+  ['ug', 'Uganda', 'Kampala'], ['cd', 'RD del Congo', 'Kinshasa'], ['ao', 'Angola', 'Luanda'],
+  ['mz', 'Mozambico', 'Maputo'], ['zw', 'Zimbabwe', 'Harare'], ['cm', 'Camerun', 'Yaoundé'],
+  ['ml', 'Mali', 'Bamako'], ['sd', 'Sudan', 'Khartum'], ['so', 'Somalia', 'Mogadiscio'],
+  ['mg', 'Madagascar', 'Antananarivo'], ['rw', 'Ruanda', 'Kigali'],
+  // Oceania
+  ['au', 'Australia', 'Canberra'], ['nz', 'Nuova Zelanda', 'Wellington'], ['fj', 'Figi', 'Suva'],
+].map(([code, name, capital]) => ({ code, name, capital }))
