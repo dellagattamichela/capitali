@@ -41,6 +41,10 @@ export const nodesOf = (path) =>
 // ref = "percorso.unità"; i passi si sbloccano in ordine, quindi basta l'ultimo
 export const unitDone = (ref, done) => done.includes(`${ref}.${STEPS.length - 1}`)
 
+// città imparate: quelle delle unità completate
+export const learned = (path, done) =>
+  path.units.filter((u) => unitDone(`${path.id}.${u.id}`, done)).reduce((n, u) => n + u.countries.length, 0)
+
 export const isOpen = (path, done) => !path.unlockedBy || unitDone(path.unlockedBy, done)
 
 // test per saltare all'unità u: domande sulle unità precedenti, se lo superi le completa tutte
@@ -83,10 +87,15 @@ const dayBefore = (d) => new Date(Date.parse(d) - 864e5).toISOString().slice(0, 
 export const streakOn = (p, d) => (p.lastDay === d || p.lastDay === dayBefore(d) ? p.streak : 0)
 
 // ids: i nodi completati (uno per una lezione, tutte le unità saltate per un test)
-export const finishLesson = (p, pathId, ids, d) => ({
-  done: [...new Set([...p.done, ...ids])],
-  xp: p.xp + XP_PER_LESSON,
-  streak: streakOn(p, d) + (p.lastDay === d ? 0 : 1),
-  lastDay: d,
-  last: pathId,
-})
+export function finishLesson(p, pathId, ids, d) {
+  const streak = streakOn(p, d) + (p.lastDay === d ? 0 : 1)
+  return {
+    ...p, // nome, avatar, ...
+    done: [...new Set([...p.done, ...ids])],
+    xp: p.xp + XP_PER_LESSON,
+    streak,
+    best: Math.max(p.best ?? 0, streak),
+    lastDay: d,
+    last: pathId,
+  }
+}

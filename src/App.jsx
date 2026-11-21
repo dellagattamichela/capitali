@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { PATHS } from './data'
-import { STEPS, XP_PER_LESSON, finishLesson, isOpen, jumpTest, makeLesson, nodesOf, normalize, streakOn, today, unitDone } from './game'
+import { STEPS, XP_PER_LESSON, finishLesson, isOpen, jumpTest, learned, makeLesson, nodesOf, normalize, streakOn, today } from './game'
+import { Avatar, AvatarEditor, Profile } from './Profile'
 
 const STEP_UI = {
   easy: { icon: '🎯', label: 'Scelta multipla' },
@@ -9,18 +10,19 @@ const STEP_UI = {
   review: { icon: '🏆', label: 'Ripasso' },
 }
 const KEY = 'capitali-progress'
-const EMPTY = { done: [], xp: 0, streak: 0, lastDay: null, last: null }
+const EMPTY = { done: [], xp: 0, streak: 0, best: 0, lastDay: null, last: null, name: '', avatar: {} }
 const TEST_LIVES = 3
 
 function load() {
   try {
-    return { ...EMPTY, ...JSON.parse(localStorage.getItem(KEY)) }
+    return { ...EMPTY, since: today(), ...JSON.parse(localStorage.getItem(KEY)) }
   } catch {
-    return EMPTY
+    return { ...EMPTY, since: today() }
   }
 }
 
-// navigazione nell'hash, così funziona il tasto indietro: "" = home, "#europa" = percorso, "#europa/lezione"
+// navigazione nell'hash, così funziona il tasto indietro:
+// "" = home, "#europa" = percorso, "#europa/lezione", "#profilo", "#profilo/avatar"
 // aprendo l'app su un percorso si rimette la home sotto nella cronologia: "indietro" porta sempre lì
 if (location.hash) {
   const [id] = location.hash.slice(1).split('/')
@@ -46,6 +48,17 @@ export default function App() {
     localStorage.setItem(KEY, JSON.stringify(progress))
   }, [progress])
 
+  const update = (patch) => setProgress((p) => ({ ...p, ...patch }))
+  const back = () => history.back()
+
+  if (pathId === 'profilo') {
+    return view === 'avatar'
+      ? <AvatarEditor avatar={progress.avatar} onChange={(avatar) => update({ avatar })} onBack={back} />
+      : <Profile progress={progress} onChange={update} onBack={back} onEdit={() => {
+          location.hash = 'profilo/avatar'
+        }} />
+  }
+
   const path = PATHS.find((p) => p.id === pathId && isOpen(p, progress.done))
   const start = (p, node) => {
     setLesson({ path: p, node, questions: makeLesson(p, node), id: Date.now() })
@@ -61,7 +74,7 @@ export default function App() {
     }
     return <Lesson key={lesson.id} {...lesson} onFinish={finish} onExit={exit} />
   }
-  if (path) return <PathView path={path} done={progress.done} onStart={(n) => start(path, n)} onBack={() => history.back()} />
+  if (path) return <PathView path={path} done={progress.done} onStart={(n) => start(path, n)} onBack={back} />
   return (
     <Home progress={progress}
       onOpen={(id) => {
@@ -86,6 +99,9 @@ function Home({ progress, onOpen, onStart }) {
       <header className="stats">
         <span className="streak" title="Giorni di fila">🔥 {streakOn(progress, today())}</span>
         <span className="xp">⚡ {progress.xp} XP</span>
+        <button type="button" className="me" onClick={() => onOpen('profilo')} aria-label="Profilo">
+          <Avatar a={progress.avatar} />
+        </button>
       </header>
       <h1>🌍 Capitali</h1>
 
@@ -103,7 +119,6 @@ function Home({ progress, onOpen, onStart }) {
         const open = isOpen(p, done)
         const nodes = nodesOf(p)
         const pct = (nodes.filter((n) => done.includes(n.id)).length / nodes.length) * 100
-        const learned = count(p.units.filter((u) => unitDone(`${p.id}.${u.id}`, done)))
         const [reqPath, reqUnit] = p.unlockedBy?.split('.') ?? []
         const req = PATHS.find((x) => x.id === reqPath)?.units.find((u) => u.id === reqUnit)
         return (
@@ -114,7 +129,7 @@ function Home({ progress, onOpen, onStart }) {
               {open ? (
                 <span className="meter">
                   <span className="progress"><span style={{ width: `${pct}%` }} /></span>
-                  <small>{learned}/{count(p.units)}</small>
+                  <small>{learned(p, done)}/{count(p.units)}</small>
                 </span>
               ) : (
                 <small>Completa l'unità «{req.title}» per sbloccarlo</small>
