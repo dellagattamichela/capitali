@@ -65,7 +65,7 @@ export function AvatarEditor({ avatar, stats, onSave, onBack }) {
     <button key={value} type="button" className={`card choice ${draft[slot] === value ? 'selected' : ''}`} disabled={!!lock}
       aria-pressed={draft[slot] === value} aria-label={lock ? `${label}, bloccato: ${lock}` : label} title={label} onClick={() => set(slot, value)}>
       {content}
-      {lock && <small className="lock">🔒 {lock}</small>}
+      {lock && <small className="lock"><img src="/padlock.png" alt="" /> {lock}</small>}
     </button>
   )
 

@@ -6,10 +6,10 @@ import { Avatar } from './Avatar.jsx'
 import { avatarStats, full, newUnlocks } from './avatarData.js'
 
 const STEP_UI = {
-  easy: { icon: '🎯', label: 'Scelta multipla' },
-  medium: { icon: '🧩', label: 'Sillabe' },
-  hard: { icon: '✍️', label: 'Scrittura' },
-  review: { icon: '🏆', label: 'Ripasso' },
+  easy: { icon: '/bullseye.png', label: 'Scelta multipla' },
+  medium: { icon: '/puzzle.png', label: 'Sillabe' },
+  hard: { icon: '/feather.png', label: 'Scrittura' },
+  review: { icon: '/trophy.png', label: 'Ripasso' },
 }
 const KEY = 'capitali-progress' // nome storico del progetto: cambiarlo cancellerebbe i progressi salvati
 const EMPTY = { done: [], parts: {}, xp: 0, streak: 0, best: 0, lastDay: null, last: null, name: '', avatar: {} }
@@ -129,7 +129,7 @@ function Home({ progress, onOpen, onStart }) {
         const req = PATHS.find((x) => x.id === reqPath)?.units.find((u) => u.id === reqUnit)
         return (
           <button key={p.id} className={`card path-card ${p.unlockedBy ? 'sub' : ''}`} disabled={!open} onClick={() => onOpen(p.id)}>
-            <span className="icon">{open ? p.icon : '🔒'}</span>
+            <span className="icon">{open ? p.icon : <img src="/padlock.png" alt="" />}</span>
             <span className="info">
               <strong>{p.title}</strong>
               {open ? (
@@ -185,7 +185,7 @@ function PathView({ path, progress, avatar, onStart, onBack }) {
                 <button key={n.id} type="button" className={`node ${state} ${ring ? 'ring' : ''}`} style={{ '--k': k, '--n': n.parts, '--p': part / n.parts }}
                   disabled={state === 'locked'} onClick={() => onStart(n)}
                   aria-label={`${label}${state === 'done' ? ', completata' : state === 'locked' ? ', bloccata' : ring ? `, lezione ${part + 1} di ${n.parts}` : ''}`}>
-                  {icon}
+                  <img src={icon} alt="" />
                   {state === 'current' && <Avatar a={avatar} view="head" className="here" />}
                 </button>
               )
