@@ -5,13 +5,13 @@ import { SLOTS, full, isUnlocked, randomAvatar, unlockHint } from './avatarData.
 import { learned, streakOn, today } from './game'
 
 const TABS = [
-  { icon: '😀', label: 'Viso', slots: ['skin', 'eyes', 'eyeColor', 'mouth'] },
+  { icon: '😀', label: 'Viso', slots: ['skin', 'eyes', 'eyeColor', 'lashes', 'brows', 'mouth'] },
   { icon: '💇', label: 'Capelli e barba', slots: ['hair', 'hairColor', 'beard', 'mustache'] },
   { icon: '🕶️', label: 'Accessori', slots: ['accessories', 'glassesColor', 'lensColor', 'pin'] },
   { icon: '🖼️', label: 'Sfondo', slots: ['bg'] },
 ]
 
-const ZOOM = { eyes: 'eyes', mouth: 'mouth', mustache: 'mouth' }
+const ZOOM = { eyes: 'eyes', lashes: 'eyes', brows: 'eyes', mouth: 'mouth', mustache: 'mouth' }
 
 export function Profile({ progress, onChange, onEdit, onBack }) {
   const streak = streakOn(progress, today())

@@ -24,6 +24,8 @@ const EYES = {
   tondi: 'normal', felici: 'cheery', assonnati: 'sleepy', occhiolino: 'winking', stellati: 'starstruck', arrabbiati: 'angry', confusi: 'confused',
   tristi: { variant: 'sad', hidden: true },
 }
+const BROWS = { naturali: 'natural', sottili: 'thin', folte: 'thick', unite: 'unibrow', 'con taglio': 'slit' }
+const LASHES = { nessuna: {}, corte: 'short', lunghe: 'long' }
 const MOUTHS = {
   sorriso: 'openedSmile', risata: 'teethSmile', sorrisetto: 'kawaii', neutra: 'unimpressed', imbarazzata: 'awkwardSmile', sdentata: 'gapSmile', apparecchio: 'braces',
   triste: { variant: 'openSad', hidden: true },
@@ -55,6 +57,8 @@ export const SLOTS = {
   skin: { label: 'Pelle', options: opts(SKIN) },
   eyes: { label: 'Occhi', options: opts(EYES) },
   eyeColor: { label: 'Colore occhi', options: opts(EYE_COLOR) },
+  lashes: { label: 'Ciglia', options: opts(LASHES) },
+  brows: { label: 'Sopracciglia', options: opts(BROWS) },
   mouth: { label: 'Bocca', options: opts(MOUTHS) },
   hair: { label: 'Stile', options: opts(HAIR) },
   hairColor: { label: 'Colore (anche di barba e baffi)', options: opts(HAIR_COLOR) },
@@ -74,7 +78,7 @@ export const MOODS = {
 }
 
 export const DEFAULT = {
-  skin: 'chiara', eyes: 'tondi', eyeColor: 'scuri', mouth: 'sorriso', hair: 'corti', hairColor: 'castani', beard: 'nessuna', mustache: 'nessuno',
+  skin: 'chiara', eyes: 'tondi', eyeColor: 'scuri', lashes: 'nessuna', brows: 'naturali', mouth: 'sorriso', hair: 'corti', hairColor: 'castani', beard: 'nessuna', mustache: 'nessuno',
   accessories: 'nessuno', glassesColor: 'oro', lensColor: 'scure', pin: 'nessuna', bg: 'azzurro',
 }
 
@@ -127,10 +131,14 @@ export const randomAvatar = (stats) => ({
 
 const el = (name, attributes, children) => ({ type: 'element', name, attributes, ...(children && { children }) })
 const hair = { type: 'color', name: 'hair' }
+const shape = (d) => el('path', { d, fill: hair })
+const line = (d, width, stroke = hair) => el('path', { d, fill: 'none', stroke, 'stroke-width': width, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })
+const r1 = (v) => Math.round(v * 10) / 10
+// le parti che dipendono da un'altra hanno una variante per ogni combinazione: tipo + altra, es. "shortOpenedSmile"
+const combo = (type, other) => type + other[0].toUpperCase() + other.slice(1)
 const { canvas, components: parts, colors } = bigSmile
 
-// Big Smile fa scegliere solo i colori di pelle e capelli: i colori fissi di occhi e occhiali diventano colori
-// scelti, e le sopracciglia (#71472D negli occhi) prendono il colore dei capelli
+// Big Smile fa scegliere solo i colori di pelle e capelli: i colori fissi di occhi e occhiali diventano colori scelti
 const recolor = (part, map) =>
   JSON.parse(JSON.stringify(part).replace(/"fill":"(#\w{6})"/g, (m, c) => (map[c] ? `"fill":{"type":"color","name":"${map[c]}"}` : m)))
 
@@ -179,16 +187,12 @@ function beardFor(type, mouth, { elements }) {
     ],
   }
 }
-// nome della variante: tipo + bocca, es. "shortOpenedSmile"
-const beardVariant = (type, mouth) => type + mouth[0].toUpperCase() + mouth.slice(1)
 const BEARD = {
   width: parts.head.width,
   height: parts.head.height,
   variants: Object.fromEntries(Object.keys(BEARD_TYPES).flatMap((type) =>
-    Object.entries(parts.mouth.variants).map(([mouth, variant]) => [beardVariant(type, mouth), beardFor(type, mouth, variant)]))),
+    Object.entries(parts.mouth.variants).map(([mouth, variant]) => [combo(type, mouth), beardFor(type, mouth, variant)]))),
 }
-const shape = (d) => el('path', { d, fill: hair })
-const line = (d, width) => el('path', { d, fill: 'none', stroke: hair, 'stroke-width': width, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })
 // i baffi di Big Smile (erano un accessorio) col colore dei capelli, più l'ombra che avevano
 const BUSHY = parts.accessories.variants.mustache.elements.flatMap((e) => [
   { ...e, attributes: { ...e.attributes, fill: hair } },
@@ -214,8 +218,71 @@ const MUSTACHE = {
     },
   },
 }
-// la barba subito dopo la testa (sotto la bocca), i baffi subito dopo la bocca. [componente, posizionato come]
-const ADD = { head: [['beard', 'head']], mouth: [['mustache', 'head']] }
+// Sopracciglia e ciglia, nelle coordinate degli occhi (149 x 106). In Big Smile ogni variante degli occhi ha un
+// tracciato per i due occhi (#2A1200) e uno per le due sopracciglia (#71472D): le sopracciglia diventano un componente
+// a parte con gli stili ricavati dalla forma originale, così tengono la posa di ogni variante (arrabbiati, tristi...).
+const isBrow = (e) => e.attributes.fill === '#71472D'
+// estremi interni delle sopracciglia [x, y del sinistro, x, y del destro], misurati sui disegni: per unirle
+const BROW_INNER = {
+  angry: [56, 41.4, 107.9, 42.5], cheery: [57.5, 28.4, 112, 31.2], confused: [56.4, 27.9, 106.5, 51], normal: [58.3, 33.1, 110.5, 34.5],
+  sad: [51.8, 27.5, 113.2, 32.5], sleepy: [58.3, 33.1, 110.5, 34.5], starstruck: [54, 23, 109, 25.5], winking: [57.5, 28.4, 112, 31.2],
+}
+const masked = (id, mask, d) => [el('defs', {}, [el('mask', { id }, mask)]), el('g', { mask: `url(#${id})` }, [shape(d)])]
+const BROW_STYLES = {
+  natural: (d) => [shape(d)],
+  // la forma meno un bordo di 3,5 (il tratto nero nella maschera la "rosicchia"): stessa posa, più sottile
+  thin: (d, id) => masked(id, [el('path', { d, fill: '#fff' }), el('path', { d, fill: 'none', stroke: '#000', 'stroke-width': '7' })], d),
+  thick: (d) => [el('path', { d, fill: hair, stroke: hair, 'stroke-width': '6', 'stroke-linejoin': 'round' })],
+  unibrow: (d, id, eyes) => {
+    const [x1, y1, x2, y2] = BROW_INNER[eyes]
+    return [shape(d), line(`M${x1 - 4} ${y1} Q${r1((x1 + x2) / 2)} ${r1((y1 + y2) / 2 + 3)} ${x2 + 4} ${y2}`, '8')]
+  },
+  // un taglio obliquo verso l'esterno del sopracciglio sinistro
+  slit: (d, id) => masked(id, [
+    el('rect', { x: '-10', y: '-10', width: '170', height: '130', fill: '#fff' }),
+    el('rect', { x: '20', y: '0', width: '4', height: '70', fill: '#000', transform: 'rotate(18 22 35)' }),
+  ], d),
+}
+const EYES_SIZE = { width: parts.eyes.width, height: parts.eyes.height }
+const BROWS_PART = {
+  ...EYES_SIZE,
+  variants: Object.fromEntries(Object.entries(BROW_STYLES).flatMap(([style, draw]) => Object.entries(parts.eyes.variants).map(([eyes, v]) =>
+    [combo(style, eyes), { elements: draw(v.elements.find(isBrow).attributes.d, `brows-${style}-${eyes}`, eyes) }]))),
+}
+
+// Ciglia: per ogni variante degli occhi l'ellisse di ogni occhio [cx, cy, rx, ry] (sinistro, destro), misurata sui
+// disegni; negli occhi chiusi è l'arco della palpebra. Le ciglia partono dal quarto esterno in alto (negli "sleepy",
+// arco all'ingiù, in basso), lungo la perpendicolare all'ellisse, e piegano un po' verso l'esterno.
+const EYE_ELLIPSES = {
+  angry: [[30.1, 82.1, 17.3, 18.6], [123.9, 81.5, 11.3, 14.9]], cheery: [[30.9, 77.4, 17.1, 19.9], [123.2, 78.8, 11.1, 15.2]],
+  confused: [[29, 79.1, 17.3, 21.6], [122.9, 82.9, 11.3, 13.4]], normal: [[30, 79.1, 17.3, 21.6], [123.9, 79.8, 11.3, 16.6]],
+  sad: [[29.2, 81.8, 17.4, 19], [123.8, 80.7, 11.4, 15.6]], sleepy: [[35.6, 70, 21.9, 18.6], [123.1, 77, 11.2, 13.8]],
+  starstruck: [[34.2, 72.3, 25, 27.1], [120.3, 69.9, 15.1, 24.5]], winking: [[35.6, 89.3, 21.9, 19.1], [123.9, 79.8, 11.3, 16.6]],
+}
+// angoli in gradi per l'occhio sinistro (y in giù: 180 = fuori a sinistra, 270 = in alto); il destro è speculare
+const LASH_STYLES = { short: { angles: [212, 238], length: 8, width: '2.6' }, long: { angles: [200, 222, 244], length: 12, width: '3' } }
+function lashesFor({ angles, length, width }, eyes) {
+  return EYE_ELLIPSES[eyes].flatMap(([cx, cy, rx, ry], right) => angles.map((deg) => {
+    let t = (deg * Math.PI) / 180
+    if (right) t = Math.PI - t
+    if (eyes === 'sleepy') t = -t
+    const [px, py] = [cx + rx * Math.cos(t), cy + ry * Math.sin(t)]
+    const n = Math.atan2(Math.sin(t) / ry, Math.cos(t) / rx) // perpendicolare all'ellisse
+    const out = n + 0.3 * Math.sign(Math.sin((right ? 0 : Math.PI) - n)) // piegata verso l'esterno
+    const len = length * (0.55 + (0.45 * rx) / 17.3) // l'occhio destro, più piccolo, ha ciglia più corte
+    const at = (a, l) => `${r1(px + l * Math.cos(a))} ${r1(py + l * Math.sin(a))}`
+    return line(`M${at(n, -1.5)} Q${at(n, len * 0.55)} ${at(out, len)}`, width, '#2A1200')
+  }))
+}
+const LASHES_PART = {
+  ...EYES_SIZE,
+  variants: Object.fromEntries(Object.entries(LASH_STYLES).flatMap(([style, s]) => Object.keys(parts.eyes.variants).map((eyes) =>
+    [combo(style, eyes), { elements: lashesFor(s, eyes) }]))),
+}
+
+// la barba subito dopo la testa (sotto la bocca), i baffi dopo la bocca, sopracciglia e ciglia dopo gli occhi (sotto
+// i capelli, come prima). [componente, posizionato come]
+const ADD = { head: [['beard', 'head']], mouth: [['mustache', 'head']], eyes: [['brows', 'eyes'], ['lashes', 'eyes']] }
 const at = (name) => canvas.elements.find((e) => e.name === name).attributes
 
 const style = new Style({
@@ -223,7 +290,10 @@ const style = new Style({
   canvas: { ...canvas, elements: canvas.elements.flatMap((e) => [e, ...(ADD[e.name] ?? []).map(([name, pos]) => ({ type: 'component', name, attributes: at(pos) }))]) },
   components: {
     ...parts,
-    eyes: recolor(parts.eyes, { '#2A1200': 'eye', '#71472D': 'hair' }),
+    eyes: recolor({ ...parts.eyes, variants: Object.fromEntries(Object.entries(parts.eyes.variants).map(([name, v]) =>
+      [name, { ...v, elements: v.elements.filter((e) => !isBrow(e)) }])) }, { '#2A1200': 'eye' }),
+    brows: BROWS_PART,
+    lashes: LASHES_PART,
     accessories: {
       ...parts.accessories,
       variants: {
@@ -239,7 +309,9 @@ const style = new Style({
 })
 
 // le parti disegnate da un componente; "nessuno" (niente variante) = probabilità 0
-const COMPONENTS = ['hair', 'eyes', 'mouth', 'beard', 'mustache', 'accessories']
+const COMPONENTS = ['hair', 'eyes', 'brows', 'lashes', 'mouth', 'beard', 'mustache', 'accessories']
+// la barba contorna la bocca, sopracciglia e ciglia seguono gli occhi: la variante è la combinazione
+const FOLLOWS = { beard: 'mouth', brows: 'eyes', lashes: 'eyes' }
 
 // anteprime ingrandite dell'editor, dentro il disegno (uno zoom CSS uscirebbe dal cerchio su Safari): DiceBear
 // ingrandisce attorno al centro, poi sposta in % del disegno; spostamento = -scala × (centro della zona - 50)
@@ -264,6 +336,8 @@ export function avatarUri(saved, mood, zoom) {
     options[`${slot}Probability`] = variant ? 100 : 0
     if (variant) options[`${slot}Variant`] = variant
   }
-  if (options.beardVariant) options.beardVariant = beardVariant(options.beardVariant, options.mouthVariant)
+  for (const [slot, other] of Object.entries(FOLLOWS)) {
+    if (options[`${slot}Variant`]) options[`${slot}Variant`] = combo(options[`${slot}Variant`], options[`${other}Variant`])
+  }
   return new Avatar(style, { ...options, ...ZOOMS[zoom] }).toDataUri()
 }

@@ -36,6 +36,15 @@ test('ogni variante viene davvero disegnata', () => {
     for (const beard of ['accennata', 'corta']) assert.ok(drawn(avatarUri({ beard, mouth }), 'beard', SLOTS.beard.options[beard].variant), `${beard} + ${mouth}`)
   }
   for (const mood of Object.keys(MOODS)) assert.ok(drawn(avatarUri({ beard: 'corta' }, mood), 'beard', 'short'), `barba + ${mood}`)
+  // sopracciglia e ciglia hanno una variante per ogni occhi (anche quelli delle reazioni)
+  for (const eyes of Object.keys(SLOTS.eyes.options)) {
+    for (const [slot, options] of [['brows', SLOTS.brows.options], ['lashes', SLOTS.lashes.options]]) {
+      for (const [name, o] of Object.entries(options)) {
+        if (o.variant) assert.ok(drawn(avatarUri({ eyes, [slot]: name }), slot, o.variant), `${slot}/${name} + ${eyes}`)
+      }
+    }
+  }
+  for (const mood of Object.keys(MOODS)) assert.ok(drawn(avatarUri({ brows: 'folte', lashes: 'lunghe' }, mood), 'lashes', 'long'), `ciglia + ${mood}`)
 })
 
 test('i colori scelti arrivano al disegno', () => {

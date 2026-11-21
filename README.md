@@ -54,7 +54,7 @@ Per provarla sul telefono nella stessa rete: `npm run dev -- --host` e apri l'in
 | `src/game.js` | Logica pura: sillabe, domande, lezioni, sblocchi del percorso, serie di giorni |
 | `src/App.jsx` | Schermate: home, percorso, lezione (navigazione nell'hash dell'URL, così funziona il tasto indietro) |
 | `src/Profile.jsx` | Profilo ed editor dell'avatar |
-| `src/avatarData.js` | L'avatar come dati: parti, colori, varianti di DiceBear (più barba e baffi disegnati qui), condizioni di sblocco |
+| `src/avatarData.js` | L'avatar come dati: parti, colori, varianti di DiceBear (più barba, baffi, sopracciglia e ciglia fatti qui), condizioni di sblocco |
 | `src/Avatar.jsx` | L'avatar disegnato con DiceBear (stile Big Smile), più sfondo e spilla |
 | `src/*.test.js` | Test |
 | `public/` | Icona (`favicon.svg` è l'originale), PNG per il telefono, manifest |
@@ -78,6 +78,6 @@ Icone dei passi e del lucchetto da Flaticon: la licenza gratuita chiede l'attrib
 
 Si possono spostare paesi e unità liberamente; non cambiare però gli `id` delle unità già esistenti, o chi le ha completate perde quei progressi. I test controllano che non ci siano doppioni e che ogni percorso abbia almeno 4 paesi (servono per le 4 opzioni di risposta).
 
-**Avatar** — in `src/avatarData.js` ogni tabella dà un nome italiano a una variante di Big Smile (`corti: 'shortHair'`) o a un colore (`biondi: '#e8b84a'`): aggiungere una voce basta perché compaia nell'editor, e con `unlock: { xp: 1000 }` diventa un oggetto da sbloccare. Le varianti esistenti sono nel [playground di DiceBear](https://www.dicebear.com/playground/?style=big-smile). Barba e baffi non sono in Big Smile: sono disegnati in fondo allo stesso file, nelle coordinate della testa; la barba ha una variante per ogni bocca, perché la contorna. Gli avatar salvati con opzioni che non esistono più tornano al valore predefinito.
+**Avatar** — in `src/avatarData.js` ogni tabella dà un nome italiano a una variante di Big Smile (`corti: 'shortHair'`) o a un colore (`biondi: '#e8b84a'`): aggiungere una voce basta perché compaia nell'editor, e con `unlock: { xp: 1000 }` diventa un oggetto da sbloccare. Le varianti esistenti sono nel [playground di DiceBear](https://www.dicebear.com/playground/?style=big-smile). Barba, baffi, ciglia e stili delle sopracciglia non sono in Big Smile: sono fatti in fondo allo stesso file. La barba ha una variante per ogni bocca, perché la contorna; sopracciglia e ciglia una per ogni variante degli occhi, perché ne seguono la posa (le sopracciglia sono ricavate da quelle originali, le ciglia partono dalle ellissi degli occhi misurate sui disegni). Gli avatar salvati con opzioni che non esistono più tornano al valore predefinito.
 
 **Icona** — si modifica `public/favicon.svg`, poi `npm run icons`. Sul telefono va tolta e riaggiunta alla schermata Home per vedere la nuova.
