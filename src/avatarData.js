@@ -25,10 +25,21 @@ const ellipse = (cx, cy, rx, ry) => `M${cx - rx} ${cy} a${rx} ${ry} 0 1 0 ${2 * 
 const box = (x, y, w, h, r) =>
   `M${x + r} ${y} H${x + w - r} Q${x + w} ${y} ${x + w} ${y + r} V${y + h - r} Q${x + w} ${y + h} ${x + w - r} ${y + h} H${x + r} Q${x} ${y + h} ${x} ${y + h - r} V${y + r} Q${x} ${y} ${x + r} ${y} Z`
 const FULL = 'M-20 -20 H120 V120 H-20 Z'
-const below = (y) => `M-20 ${y} H120 V120 H-20 Z` // ritaglio dei capelli: visibili solo sotto la tesa
+// ritaglio dei capelli sotto un cappello: visibili sotto la tesa (altezza y, larga da x0 a 100 - x0); fuori dalla tesa
+// il bordo scende curvo, così i capelli larghi (afro, boccoli, lunghi) escono da sotto arrotondati e non tagliati dritti
+const under = (y, x0) =>
+  `M-20 120 V${y + 34} H${x0 - 16} C${x0 - 16} ${y + 12} ${x0 - 8} ${y} ${x0} ${y} H${100 - x0} C${108 - x0} ${y} ${116 - x0} ${y + 12} ${116 - x0} ${y + 34} H120 V120 Z`
 
 // inquadrature (viewBox): intera, testa e spalle per le misure piccole, e zoom per le anteprime dell'editor
-export const VIEWS = { full: '-6 -12 112 112', head: '10 -2 80 80', hat: '6 -12 88 88', face: '25 25 50 50', chin: '20 32 60 60', top: '18 40 64 64' }
+const VIEWS = { full: '-6 -12 112 112', head: '10 -2 80 80', hat: '6 -12 88 88', face: '25 25 50 50', chin: '20 32 60 60', top: '18 40 64 64' }
+// le inquadrature che arrivano sopra la testa si allargano (fondo fermo, centrate) se capelli alti, corona o cuffie
+// uscirebbero dal bordo: l'avatar rimpicciolisce un po' invece di venire tagliato
+export function viewBox(view, hair, hat) {
+  const top = Math.min(hat.clip ? HEAD_TOP : hair.top, hat.reach?.(hair.top) ?? HEAD_TOP) // col cappello i capelli sopra non si vedono
+  const [x, y, w] = VIEWS[view].split(' ').map(Number)
+  const d = y < HEAD_TOP ? Math.max(0, y - top + 2) : 0 // 2 di margine
+  return `${x - d / 2} ${y - d} ${w + d} ${w + d}`
+}
 // sagoma del busto con lo scollo: le maglie sono ritagliate qui dentro
 export const TORSO = 'M15 100 C15 86 27 78 40 77 Q50 85 60 77 C73 78 85 86 85 100 Z'
 
@@ -38,22 +49,16 @@ const SHIRT = { verde: '#58cc02', azzurra: '#1cb0f6', rossa: '#ff4b4b', gialla: 
 
 // --- viso ---
 
-const highlights = [['#fff', circle(41.2, 44.8, 1.1)], ['#fff', circle(61.2, 44.8, 1.1)]]
+// occhi pieni, senza bianco; i riflessi restano della stessa misura anche se l'occhio è più grande
+const highlights = [['#fff', circle(41.5, 44.5, 1.1)], ['#fff', circle(61.5, 44.5, 1.1)]]
 const EYES = {
-  tondi: [['ink', circle(40, 46, 3.3)], ['ink', circle(60, 46, 3.3)], ...highlights],
-  grandi: [
-    ['#fff', ellipse(40, 46, 5, 5.6)], ['#fff', ellipse(60, 46, 5, 5.6)],
-    ['ink', ellipse(40, 46, 5, 5.6), 1.2], ['ink', ellipse(60, 46, 5, 5.6), 1.2],
-    ['ink', circle(40.6, 46.8, 3.2)], ['ink', circle(60.6, 46.8, 3.2)],
-    ['#fff', circle(41.8, 45.4, 1.2)], ['#fff', circle(61.8, 45.4, 1.2)],
-  ],
-  mandorla: [['ink', 'M35 46 Q40 41 45 46 Q40 49.5 35 46 Z'], ['ink', 'M55 46 Q60 41 65 46 Q60 49.5 55 46 Z'], ['#fff', circle(41.4, 45, 0.9)], ['#fff', circle(61.4, 45, 0.9)]],
+  tondi: [['ink', circle(40, 46, 4.2)], ['ink', circle(60, 46, 4.2)], ...highlights],
   assonnati: [
-    ['ink', 'M36.5 45.5 A3.5 3.5 0 0 0 43.5 45.5 Z'], ['ink', 'M56.5 45.5 A3.5 3.5 0 0 0 63.5 45.5 Z'],
-    ['ink', 'M35.5 45.5 H44.5 M55.5 45.5 H64.5', 1.8], ['#fff', circle(41.4, 47, 0.8)], ['#fff', circle(61.4, 47, 0.8)],
+    ['ink', 'M35.6 45.5 A4.4 4.4 0 0 0 44.4 45.5 Z'], ['ink', 'M55.6 45.5 A4.4 4.4 0 0 0 64.4 45.5 Z'],
+    ['ink', 'M34.6 45.5 H45.4 M54.6 45.5 H65.4', 1.8], ['#fff', circle(41.8, 47.4, 0.8)], ['#fff', circle(61.8, 47.4, 0.8)],
   ],
-  occhiolino: [['ink', circle(40, 46, 3.3)], ['#fff', circle(41.2, 44.8, 1.1)], ['ink', 'M56 46.5 Q60 42.5 64 46.5', 2.8]],
-  felici: [['ink', 'M36 47.5 Q40 42.5 44 47.5', 3], ['ink', 'M56 47.5 Q60 42.5 64 47.5', 3]],
+  occhiolino: [['ink', circle(40, 46, 4.2)], highlights[0], ['ink', 'M55 46.8 Q60 41.8 65 46.8', 2.8]],
+  felici: [['ink', 'M35 48 Q40 41.8 45 48', 3], ['ink', 'M55 48 Q60 41.8 65 48', 3]],
 }
 
 const BROWS = {
@@ -63,13 +68,6 @@ const BROWS = {
   arcuate: [['shade', 'M35 39 Q40 33.5 45 37.5', 2.6], ['shade', 'M55 37.5 Q60 33.5 65 39', 2.6]],
   dritte: [['shade', 'M35 37.5 H45', 2.8], ['shade', 'M55 37.5 H65', 2.8]],
   preoccupate: { hidden: true, front: [['shade', 'M35 39 Q40 38 45 35.5', 2.6], ['shade', 'M55 35.5 Q60 38 65 39', 2.6]] },
-}
-
-const NOSES = {
-  nessuno: [],
-  puntino: [['shade', ellipse(50, 53, 2.2, 1.6)]],
-  tondo: [['shade', 'M46.5 54 Q50 58 53.5 54', 1.8]],
-  'a punta': [['shade', 'M50.5 48 L47.5 55 Q49.5 56 52 55.3', 1.8]],
 }
 
 const MOUTHS = {
@@ -91,6 +89,8 @@ const DETAILS = {
 
 const CAP = 'M23 47 C21 22 36 14 50 14 C64 14 79 22 77 47 C73 36 62 31 50 31 C38 31 27 36 23 47 Z'
 const SHINE = ['light', 'M31 31 Q35 22 44 19', 2.6]
+// rasatura: semitrasparente, quindi dentro il contorno della testa (ellisse), altrimenti fa un alone sullo sfondo
+const SHAVED = 'M24.2 47 A26 25 0 1 1 75.8 47 C73 36 62 31 50 31 C38 31 27 36 24.2 47 Z'
 // ricci: tanti cerchi di misure diverse fanno un contorno irregolare; dietro più scuri (bordo), davanti il colore
 // pieno, e sopra dei piccoli riccioli disegnati per la texture
 const r1 = (v) => Math.round(v * 10) / 10
@@ -121,9 +121,30 @@ const braid = [[70, 88], [72, 80], [74, 72], [75.5, 64], [77, 56]].flatMap(([x, 
 const HAIR = {
   nessuno: { top: HEAD_TOP },
   corti: { top: 14, front: [['base', CAP], SHINE] },
+  'riga di lato': { top: 14, front: [['base', 'M23 47 C21 22 36 14 50 14 C64 14 79 22 77 47 C75 38 69 33 60 33 C50 33 42 29 37 24 C32 30 26 37 23 47 Z'], ['shade', 'M37 18 Q36 21 37 24', 1.2], SHINE] },
+  ciuffo: {
+    top: 5,
+    front: [['base', 'M23 47 C21 30 26 19 36 13 C42 6 56 3 64 7 C72 11 79 24 77 47 C73 36 62 31 50 31 C38 31 27 36 23 47 Z'], ['shade', 'M38 17 Q48 8 62 10', 1.2], SHINE],
+  },
+  // lati rasati (faint) e sopra più lunghi: ciuffo alzato, oppure pettinato di lato con la riga
+  sfumato: {
+    top: 5,
+    front: [['faint', SHAVED], ['base', 'M28 38 C26 24 32 12 44 7 C52 3 62 5 66 10 C72 16 74 26 72 38 C66 33 58 31 50 31 C42 31 34 33 28 38 Z'], ['shade', 'M37 19 Q46 10 58 9', 1.1]],
+  },
+  undercut: {
+    top: 13,
+    front: [['faint', SHAVED], ['base', 'M29 39 C27 26 33 15 48 13 C62 12 74 19 72 39 C68 33 58 30 48 29 C40 28 33 31 29 39 Z'], ['shade', 'M37 18 Q36 22 37 27', 1.2], ['shade', 'M42 20 Q56 16 68 25', 1]],
+  },
+  'tirati indietro': {
+    top: 14,
+    front: [['base', 'M23 45 C21 22 36 14 50 14 C64 14 79 22 77 45 C74 33 63 27 50 27 C37 27 26 33 23 45 Z'], ['shade', 'M38 26 Q39 19 45 16 M50 26 V16 M62 26 Q61 19 55 16', 1]],
+  },
+  'a spazzola': { top: 16, front: [['base', 'M24 44 C22 28 26 18 34 16 H66 C74 18 78 28 76 44 C72 35 62 31.5 50 31.5 C38 31.5 28 35 24 44 Z'], ['shade', 'M36 19 V22 M43 18 V21 M50 18 V21 M57 18 V21 M64 19 V22', 1]] },
+  'a scodella': { top: 13, front: [['base', 'M22 48 C20 22 36 13 50 13 C64 13 80 22 78 48 H72 L71 35 H29 L28 48 Z'], SHINE] },
+  stempiato: { top: HEAD_TOP, front: [['base', 'M22.5 49 C20 38 22 29 30 24 Q31 27 29 30 C27 35 27.5 42 28.5 49 Z'], ['base', 'M77.5 49 C80 38 78 29 70 24 Q69 27 71 30 C73 35 72.5 42 71.5 49 Z']] },
   spettinati: { top: 3, front: [['base', 'M23 47 C21 30 27 22 33 19 L30 7 L40 14 L45 3 L52 13 L60 5 L62 16 C71 20 79 29 77 47 C73 36 62 31 50 31 C38 31 27 36 23 47 Z']] },
-  cresta: { top: 2, front: [['faint', CAP], ['base', 'M43 33 C41 20 44 8 50 2 C56 8 59 20 57 33 Q50 30 43 33 Z']] },
-  rasati: { top: 12, front: [['faint', CAP], ['base', 'M26 38 C27 19 46 11 62 14 C74 16 80 26 77 39 C67 30 50 26 26 38 Z']] },
+  cresta: { top: 2, front: [['faint', SHAVED], ['base', 'M43 33 C41 20 44 8 50 2 C56 8 59 20 57 33 Q50 30 43 33 Z']] },
+  rasati: { top: 12, front: [['faint', SHAVED], ['base', 'M26 38 C27 19 46 11 62 14 C74 16 80 26 77 39 C67 30 50 26 26 38 Z']] },
   chignon: { top: 2, back: [['base', circle(50, 11, 9)]], front: [['base', CAP], SHINE] },
   coda: { top: 14, back: [['shade', 'M68 24 C90 22 94 52 84 74 C82 60 78 46 68 40 Z']], front: [['base', CAP], SHINE] },
   caschetto: {
@@ -174,7 +195,7 @@ const HAIR = {
   'ricci rasati': {
     top: 10,
     front: [
-      ['faint', CAP], ...ring('shade', [50, 27, 18, 11], [180, 360], 9, 6), ['base', ellipse(50, 26, 17, 8)],
+      ['faint', SHAVED], ...ring('shade', [50, 27, 18, 11], [180, 360], 9, 6), ['base', ellipse(50, 26, 17, 8)],
       ...ring('base', [50, 27, 15.5, 9], [185, 355], 8, 5), ...curls([[40, 20], [50, 17], [58, 21], [45, 25]]),
     ],
   },
@@ -207,6 +228,8 @@ const HAIR = {
     back: [
       ...ring('shade', [50, 40, 31, 27], [140, 400], 15, 8.5), ['shade', ellipse(50, 44, 30, 28)],
       ...circles('shade', [[18, 60, 9], [17, 72, 9], [19, 83, 8], [82, 60, 9], [83, 72, 9], [81, 83, 8]]),
+      // massa dietro al collo che unisce le due colonne: senza sembrano due codini
+      ['shade', 'M18 56 C16 70 17 80 20 88 Q50 95 80 88 C83 80 84 70 82 56 Z'],
     ],
     front: [
       // colonne a zig-zag, non dritte: sembrano boccoli e non palline impilate
@@ -239,19 +262,21 @@ const TOPS = {
   giacca: [['base', FULL], ['#ffffff', 'M40 77 Q50 85 60 77 L56 100 H44 Z'], ['shade', 'M40 77 L47 90 L44 100 H38 L36 80 Z'], ['shade', 'M60 77 L53 90 L56 100 H62 L64 80 Z']],
 }
 
-// --- accessori: clip = dove restano visibili i capelli; il colore base è quello della maglia ---
+// --- accessori: clip = dove restano visibili i capelli; reach = punto più alto, se dipende dai capelli;
+// il colore base è quello della maglia ---
 
 const HATS = {
   nessuno: {},
   cappellino: {
-    clip: below(37),
+    clip: under(37, 22),
     front: [['base', 'M22 37 C21 10 79 10 78 37 Z'], ['shade', 'M22 33 H78 V37.5 H22 Z'], ['shade', 'M50 33 Q86 29 94 38 Q78 42 50 37.5 Z'], ['light', circle(50, 16.5, 2.6)]],
   },
   berretto: {
-    clip: below(40),
+    clip: under(40, 21),
     front: [['base', 'M21 40 C19 6 81 6 79 40 Z'], ['shade', 'M20 32 H80 Q81 41 77 41 H23 Q19 41 20 32 Z'], ['light', circle(50, 11, 5)]],
   },
   cuffie: {
+    reach: (t) => 0.75 * t + 2, // cima dell'archetto
     front: [
       ['#4b4b4b', (t) => `M19 47 C17 ${t - 13} 83 ${t - 13} 81 47 L76.5 47 C78 ${t - 7} 22 ${t - 7} 23.5 47 Z`],
       ['base', box(15, 38, 11, 18, 4.5)], ['base', box(74, 38, 11, 18, 4.5)], ['shade', box(21, 41, 4, 12, 2)], ['shade', box(75, 41, 4, 12, 2)],
@@ -259,12 +284,12 @@ const HATS = {
   },
   esploratore: {
     unlock: { units: 1 },
-    clip: below(35),
+    clip: under(35, 8),
     front: [['#c8a46a', 'M28 31 C28 9 72 9 72 31 Z'], ['#7a5a2e', 'M28 26 H72 V31 H28 Z'], ['#b08d57', 'M8 34 Q50 24 92 34 Q50 41 8 34 Z']],
   },
   aviatore: {
     unlock: { best: 7 },
-    clip: below(62),
+    clip: under(52, 22), // i capelli escono da sotto la calotta, ai lati dei paraorecchie
     front: [
       ['#8b5a2b', 'M22 52 C19 10 81 10 78 52 L78 62 Q74 67 70 61 L70 45 C66 34 58 30 50 30 C42 30 34 34 30 45 L30 61 Q26 67 22 62 Z'],
       ['#5c3a1e', 'M23 28 H77 V32 H23 Z'],
@@ -273,6 +298,7 @@ const HATS = {
   },
   corona: {
     unlock: { xp: 500 },
+    reach: (t) => t - 11,
     front: [
       ['#ffc800', (t) => `M33 ${t + 7} L32 ${t - 8} L41.5 ${t - 1} L50 ${t - 11} L58.5 ${t - 1} L68 ${t - 8} L67 ${t + 7} Z`],
       ['#e0a800', (t) => `M33 ${t + 3} H67 V${t + 7} H33 Z`],
@@ -313,7 +339,6 @@ export const SLOTS = {
   skin: { label: 'Pelle', options: opts(SKIN) },
   eyes: { label: 'Occhi', view: 'face', paint: 'ink', options: opts(EYES) },
   brows: { label: 'Sopracciglia', view: 'face', paint: 'hairColor', options: opts(BROWS) },
-  nose: { label: 'Naso', view: 'face', paint: 'skin', options: opts(NOSES) },
   mouth: { label: 'Bocca', view: 'face', paint: 'ink', options: opts(MOUTHS) },
   details: { label: 'Dettagli', view: 'face', paint: 'skin', options: opts(DETAILS) },
   hair: { label: 'Stile', view: 'full', paint: 'hairColor', options: opts(HAIR) }, // intera: si vede la lunghezza
@@ -334,7 +359,7 @@ export const MOODS = {
 }
 
 export const DEFAULT = {
-  skin: 'chiara', eyes: 'tondi', brows: 'sottili', nose: 'puntino', mouth: 'sorriso', details: 'guance',
+  skin: 'chiara', eyes: 'tondi', brows: 'sottili', mouth: 'sorriso', details: 'guance',
   hair: 'corti', hairColor: 'castani', beard: 'nessuna', top: 'maglietta', shirt: 'verde',
   hat: 'nessuno', glasses: 'nessuno', ears: 'nessuno', pin: 'nessuna', bg: 'azzurro',
 }

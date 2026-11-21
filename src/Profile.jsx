@@ -5,7 +5,7 @@ import { SLOTS, full, isUnlocked, randomAvatar, unlockHint } from './avatarData.
 import { learned, streakOn, today } from './game'
 
 const TABS = [
-  { icon: '😀', label: 'Viso', slots: ['skin', 'eyes', 'brows', 'nose', 'mouth', 'details'] },
+  { icon: '😀', label: 'Viso', slots: ['skin', 'eyes', 'brows', 'mouth', 'details'] },
   { icon: '💇', label: 'Capelli', slots: ['hair', 'hairColor', 'beard'] },
   { icon: '👕', label: 'Vestiti', slots: ['top', 'shirt', 'pin'] },
   { icon: '🎩', label: 'Accessori', slots: ['hat', 'glasses', 'ears'] },

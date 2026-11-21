@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { INK, MOODS, SLOTS, TORSO, VIEWS, full, paint } from './avatarData.js'
+import { INK, MOODS, SLOTS, TORSO, full, paint, viewBox } from './avatarData.js'
 
 function Shapes({ list = [], color, top }) {
   return list.map(([token, d, width], i) => {
@@ -11,7 +11,7 @@ function Shapes({ list = [], color, top }) {
   })
 }
 
-// mood: "felice" / "triste" sostituisce occhi, sopracciglia e bocca; view: inquadratura (VIEWS)
+// mood: "felice" / "triste" sostituisce occhi, sopracciglia e bocca; view: inquadratura (viewBox)
 export function Avatar({ a: saved, mood, view = 'full', className = '' }) {
   const id = useId()
   const a = { ...full(saved), ...MOODS[mood] }
@@ -25,7 +25,7 @@ export function Avatar({ a: saved, mood, view = 'full', className = '' }) {
 
   return (
     <span className={`avatar ${className}`} style={{ background: opt('bg').color }}>
-      <svg viewBox={VIEWS[view]} aria-hidden="true" fillRule="evenodd">
+      <svg viewBox={viewBox(view, hair, hat)} aria-hidden="true" fillRule="evenodd">
         <defs>
           <clipPath id={`${id}h`}><path d={hat.clip ?? 'M-20 -20 H120 V120 H-20 Z'} /></clipPath>
           <clipPath id={`${id}t`}><path d={TORSO} /></clipPath>
@@ -54,11 +54,13 @@ export function Avatar({ a: saved, mood, view = 'full', className = '' }) {
         {layer('details')}
         {layer('eyes')}
         {layer('brows')}
-        {layer('nose')}
+        {/* naso, uguale per tutti */}
+        <ellipse cx="50" cy="53" rx="2.2" ry="1.6" style={{ fill: paint('shade', skin) }} />
         {layer('beard')}
         {layer('mouth')}
-        {layer('ears')}
         <g clipPath={`url(#${id}h)`}>{layer('hair')}</g>
+        {/* orecchie sopra i capelli: con quelli lunghi o ricci orecchini e apparecchio non spariscono */}
+        {layer('ears')}
         {layer('glasses')}
         {layer('hat')}
       </svg>

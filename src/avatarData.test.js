@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { DEFAULT, MOODS, SLOTS, avatarStats, full, isUnlocked, newUnlocks, paint, randomAvatar } from './avatarData.js'
+import { DEFAULT, MOODS, SLOTS, avatarStats, full, isUnlocked, newUnlocks, paint, randomAvatar, viewBox } from './avatarData.js'
 import { nodesOf } from './game.js'
 import { PATHS } from './data.js'
 
@@ -71,4 +71,14 @@ test('il dado sceglie solo tra le opzioni sbloccate', () => {
     assert.ok(Object.entries(SLOTS).every(([slot, s]) => isUnlocked(s.options[a[slot]], ZERO)))
     assert.equal(a.pin, 'nessuna')
   }
+})
+
+test('le inquadrature si allargano invece di tagliare corona e capelli alti', () => {
+  const { hair: { options: hair }, hat: { options: hat } } = SLOTS
+  assert.equal(viewBox('head', hair.corti, hat.nessuno), '10 -2 80 80') // tutto dentro: inquadratura normale
+  for (const [name, h] of Object.entries(hair)) {
+    const y = Number(viewBox('head', h, hat.corona).split(' ')[1])
+    assert.ok(y <= hat.corona.reach(h.top) - 2, name)
+  }
+  assert.equal(viewBox('face', hair.afro, hat.corona), '25 25 50 50') // gli zoom sul viso restano fermi
 })
