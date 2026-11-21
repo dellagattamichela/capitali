@@ -110,7 +110,6 @@ function Home({ progress, onOpen, onStart }) {
           <Avatar a={progress.avatar} view="head" />
         </button>
       </header>
-      <h1><img className="logo" src="/favicon.svg" alt="" /> Giramondo</h1>
 
       {next && (
         <div className="card continue">

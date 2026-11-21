@@ -17,3 +17,14 @@ createRoot(document.getElementById('root')).render(
     <App />
   </StrictMode>,
 )
+
+// la schermata iniziale (index.html) esce quando la puntina è atterrata (o subito se lo è già)
+// e si toglie a fine uscita; con le animazioni ridotte non ce ne sono, quindi sparisce subito
+const splash = document.getElementById('splash')
+const animated = () => Promise.allSettled(splash.getAnimations({ subtree: true }).map((a) => a.finished))
+animated()
+  .then(() => {
+    splash.classList.add('out')
+    return animated()
+  })
+  .then(() => splash.remove())
