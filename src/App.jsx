@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PATHS } from './data'
-import { STEPS, XP_PER_LESSON, finishLesson, isOpen, jumpTest, learned, makeLesson, nodesOf, normalize, streakOn, today } from './game'
+import { STEPS, XP_PER_LESSON, finishLesson, isOpen, jumpTest, learned, makeLesson, nodesOf, normalize, partOf, streakOn, today } from './game'
 import { AvatarEditor, Profile } from './Profile'
 import { Avatar } from './Avatar.jsx'
 import { avatarStats, full, newUnlocks } from './avatarData.js'
@@ -12,7 +12,7 @@ const STEP_UI = {
   review: { icon: '🏆', label: 'Ripasso' },
 }
 const KEY = 'capitali-progress' // nome storico del progetto: cambiarlo cancellerebbe i progressi salvati
-const EMPTY = { done: [], xp: 0, streak: 0, best: 0, lastDay: null, last: null, name: '', avatar: {} }
+const EMPTY = { done: [], parts: {}, xp: 0, streak: 0, best: 0, lastDay: null, last: null, name: '', avatar: {} }
 const TEST_LIVES = 3
 
 function load() {
@@ -63,14 +63,14 @@ export default function App() {
 
   const path = PATHS.find((p) => p.id === pathId && isOpen(p, progress.done))
   const start = (p, node) => {
-    setLesson({ path: p, node, questions: makeLesson(p, node), id: Date.now() })
+    setLesson({ path: p, node, questions: makeLesson(p, node, partOf(progress, node)), id: Date.now() })
     location.hash = `${p.id}/lezione`
   }
 
   if (path && view === 'lezione' && lesson?.path === path) {
     const { node } = lesson
     const finish = () => {
-      const next = finishLesson(progress, path.id, node.clears ?? [node.id], today())
+      const next = finishLesson(progress, path.id, node, today())
       setLesson({ ...lesson, unlocks: newUnlocks(avatarStats(progress), avatarStats(next)) })
       setProgress(next)
     }
@@ -81,7 +81,7 @@ export default function App() {
     const wear = (slot, name) => update({ avatar: { ...full(progress.avatar), [slot]: name } })
     return <Lesson key={lesson.id} {...lesson} avatar={progress.avatar} onFinish={finish} onWear={wear} onExit={exit} />
   }
-  if (path) return <PathView path={path} done={progress.done} avatar={progress.avatar} onStart={(n) => start(path, n)} onBack={back} />
+  if (path) return <PathView path={path} progress={progress} avatar={progress.avatar} onStart={(n) => start(path, n)} onBack={back} />
   return (
     <Home progress={progress}
       onOpen={(id) => {
@@ -149,7 +149,8 @@ function Home({ progress, onOpen, onStart }) {
   )
 }
 
-function PathView({ path, done, avatar, onStart, onBack }) {
+function PathView({ path, progress, avatar, onStart, onBack }) {
+  const { done } = progress
   const nodes = nodesOf(path)
   const current = nodes.findIndex((n) => !done.includes(n.id))
   useEffect(() => {
@@ -179,10 +180,12 @@ function PathView({ path, done, avatar, onStart, onBack }) {
               const k = nodes.indexOf(n)
               const state = done.includes(n.id) ? 'done' : k === current ? 'current' : 'locked'
               const { icon, label } = STEP_UI[n.type]
+              const part = partOf(progress, n)
+              const ring = state === 'current' && n.parts > 1 // i trattini: uno per lezione del passo
               return (
-                <button key={n.id} type="button" className={`node ${state}`} style={{ '--k': k }}
+                <button key={n.id} type="button" className={`node ${state} ${ring ? 'ring' : ''}`} style={{ '--k': k, '--n': n.parts, '--p': part / n.parts }}
                   disabled={state === 'locked'} onClick={() => onStart(n)}
-                  aria-label={`${label}${state === 'done' ? ', completata' : state === 'locked' ? ', bloccata' : ''}`}>
+                  aria-label={`${label}${state === 'done' ? ', completata' : state === 'locked' ? ', bloccata' : ring ? `, lezione ${part + 1} di ${n.parts}` : ''}`}>
                   {icon}
                   {state === 'current' && <Avatar a={avatar} view="head" className="here" />}
                 </button>

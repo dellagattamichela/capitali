@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { syllables, normalize, makeQuestion, makeLesson, nodesOf, unitDone, finishLesson, streakOn, jumpTest, isOpen, learned } from './game.js'
+import { syllables, normalize, makeQuestion, makeLesson, nodesOf, unitDone, finishLesson, streakOn, jumpTest, isOpen, learned, partOf } from './game.js'
 import { PATHS } from './data.js'
 
 const ALL = PATHS.flatMap((p) => p.units.flatMap((u) => u.countries))
@@ -60,6 +60,9 @@ test('lezioni del percorso', () => {
   assert.ok(intro.slice(1).every((q, i) => q.name !== intro[i].name), 'stesso paese due volte di fila')
   assert.equal(intro.filter((q) => q.isNew).length, 3)
   assert.ok(intro.every((q) => q.level === 'easy' && q.options.length === 4))
+  const later = makeLesson(path, nodes[5], 1) // seconda lezione dello stesso passo
+  assert.ok(later.every((q) => !q.isNew))
+  assert.ok(later.some((q) => path.units[0].countries.some((c) => c.name === q.name)), 'dopo la prima lezione tornano le unità precedenti')
 
   const review = makeLesson(path, nodes[9])
   assert.deepEqual(new Set(review.map((q) => q.level)), new Set(['easy', 'medium', 'hard', 'reverse']))
@@ -70,23 +73,26 @@ test('lezioni del percorso', () => {
   assert.deepEqual(jump.clears, nodes.filter((n) => n.u === 0).map((n) => n.id))
   const test = makeLesson(path, jump)
   assert.ok(test.every((q) => path.units[0].countries.some((c) => c.name === q.name)), 'il test copre solo le unità saltate')
-  assert.ok(unitDone('x.a', finishLesson({ done: [], xp: 0, streak: 0 }, 'x', jump.clears, '2026-11-30').done))
+  assert.ok(unitDone('x.a', finishLesson({ done: [], xp: 0, streak: 0 }, 'x', jump, '2026-11-30').done))
 })
 
 test('progressi e serie di giorni', () => {
   let p = { done: [], xp: 0, streak: 0, lastDay: null, name: 'Ada' }
-  p = finishLesson(p, 'x', ['x.a.0'], '2026-11-30')
-  p = finishLesson(p, 'x', ['x.a.0'], '2026-11-30') // stessa lezione, stesso giorno
-  assert.deepEqual([p.done, p.xp, p.streak, p.last], [['x.a.0'], 20, 1, 'x'])
+  const a0 = { id: 'x.a.0', parts: 2 }
+  p = finishLesson(p, 'x', a0, '2026-11-30')
+  assert.deepEqual([p.done, p.parts], [[], { 'x.a.0': 1 }]) // prima lezione del passo su due
+  p = finishLesson(p, 'x', a0, '2026-11-30') // stesso passo, stesso giorno
+  assert.deepEqual([p.done, p.parts, p.xp, p.streak, p.last], [['x.a.0'], {}, 20, 1, 'x'])
+  assert.equal(partOf(p, a0), 1) // un passo completato si ripete dall'ultima lezione
   assert.ok(!unitDone('x.a', p.done))
 
-  p = finishLesson(p, 'x', ['x.a.4'], '2026-12-01') // il giorno dopo, a cavallo del mese
+  p = finishLesson(p, 'x', { id: 'x.a.4', parts: 1 }, '2026-12-01') // il giorno dopo, a cavallo del mese
   assert.equal(p.streak, 2)
   assert.ok(unitDone('x.a', p.done))
   assert.ok(isOpen({ unlockedBy: 'x.a' }, p.done) && !isOpen({ unlockedBy: 'x.b' }, p.done))
   assert.equal(streakOn(p, '2026-12-02'), 2)
   assert.equal(streakOn(p, '2026-12-03'), 0)
-  const broken = finishLesson(p, 'x', ['x.b.0'], '2026-12-05')
+  const broken = finishLesson(p, 'x', { id: 'x.b.0', parts: 1 }, '2026-12-05')
   assert.deepEqual([broken.streak, broken.best, broken.name], [1, 2, 'Ada']) // il record resta, il profilo pure
   assert.equal(learned({ id: 'x', units: [{ id: 'a', countries: [1, 2, 3] }, { id: 'b', countries: [4] }] }, p.done), 3)
 })

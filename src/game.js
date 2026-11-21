@@ -34,9 +34,14 @@ export const STEPS = ['easy', 'easy', 'medium', 'hard', 'review']
 const MIXED = ['easy', 'medium', 'hard', 'reverse']
 export const LESSON_LENGTH = 10
 export const XP_PER_LESSON = 10
+export const PARTS = 3 // lezioni per passo (i trattini intorno al cerchio); il ripasso ne ha una
+const OLD = 3 // capitali delle unità precedenti nelle lezioni dopo la prima
 
 export const nodesOf = (path) =>
-  path.units.flatMap((unit, u) => STEPS.map((type, s) => ({ id: `${path.id}.${unit.id}.${s}`, type, u, s })))
+  path.units.flatMap((unit, u) => STEPS.map((type, s) => ({ id: `${path.id}.${unit.id}.${s}`, type, u, s, parts: type === 'review' ? 1 : PARTS })))
+
+// la lezione a cui è arrivato il passo; un passo completato si ripete dall'ultima
+export const partOf = (p, node) => (p.done.includes(node.id) ? node.parts - 1 : p.parts?.[node.id] ?? 0)
 
 // ref = "percorso.unità"; i passi si sbloccano in ordine, quindi basta l'ultimo
 export const unitDone = (ref, done) => done.includes(`${ref}.${STEPS.length - 1}`)
@@ -61,17 +66,17 @@ function pick(arr, n) {
   return out.slice(0, n)
 }
 
-export function makeLesson(path, { u, s, type }, n = LESSON_LENGTH) {
+export function makeLesson(path, { u, s, type }, part = 0, n = LESSON_LENGTH) {
   const all = path.units.flatMap((x) => x.countries) // risposte sbagliate plausibili: dallo stesso percorso
   const unit = path.units[u].countries
   const before = path.units.slice(0, u).flatMap((x) => x.countries)
-  // il ripasso aggiunge qualche paese delle unità precedenti, il test le copre tutte
-  const pool = type === 'test' ? before : type === 'review' ? [...unit, ...sample(before, 4)] : unit
+  // dopo la prima lezione e nel ripasso tornano alcuni paesi delle unità precedenti, il test le copre tutte
+  const pool = type === 'test' ? before : type === 'review' ? [...unit, ...sample(before, 4)] : [...unit, ...(part ? sample(before, OLD) : [])]
   const mixed = type === 'review' || type === 'test'
   const seen = new Set()
   return pick(pool, n).map((c, i) => {
     const q = makeQuestion(c, mixed ? MIXED[i % MIXED.length] : type, all)
-    q.isNew = s === 0 && !seen.has(c) // primo passo: alla prima apparizione si mostra la risposta
+    q.isNew = s === 0 && part === 0 && !seen.has(c) // prima lezione: alla prima apparizione si mostra la risposta
     seen.add(c)
     return q
   })
@@ -86,12 +91,17 @@ const dayBefore = (d) => new Date(Date.parse(d) - 864e5).toISOString().slice(0, 
 // la serie vale ancora se l'ultima lezione è di oggi o di ieri
 export const streakOn = (p, d) => (p.lastDay === d || p.lastDay === dayBefore(d) ? p.streak : 0)
 
-// ids: i nodi completati (uno per una lezione, tutte le unità saltate per un test)
-export function finishLesson(p, pathId, ids, d) {
+// node: il passo appena fatto, completato all'ultima lezione; un test completa tutte le unità saltate (node.clears)
+export function finishLesson(p, pathId, node, d) {
   const streak = streakOn(p, d) + (p.lastDay === d ? 0 : 1)
+  const part = partOf(p, node) + 1
+  const ids = node.clears ?? (part >= node.parts ? [node.id] : [])
+  const parts = { ...p.parts, [node.id]: part }
+  if (ids.length) delete parts[node.id]
   return {
     ...p, // nome, avatar, ...
     done: [...new Set([...p.done, ...ids])],
+    parts,
     xp: p.xp + XP_PER_LESSON,
     streak,
     best: Math.max(p.best ?? 0, streak),

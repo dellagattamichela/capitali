@@ -58,6 +58,12 @@ button.card:not(:disabled):active { transform: translateY(2px); border-bottom-wi
 .node:disabled { filter: grayscale(1); opacity: .5; }
 .node:not(:disabled):active { transform: translateY(6px); box-shadow: none; }
 .node.current::before { content: 'Inizia'; position: absolute; bottom: calc(100% + 12px); left: 50%; translate: -50% 0; background: #fff; color: var(--c); border: 2px solid var(--grey); border-radius: 12px; padding: 6px 12px; font-size: .85rem; font-weight: 900; text-transform: uppercase; white-space: nowrap; animation: bob .8s ease-in-out infinite alternate; }
+/* trattini intorno al passo corrente: uno per lezione, colorati quelli fatti (--p = frazione fatta) */
+.node.ring { margin-block: 10px 16px; } /* lo spazio dell'anello, così non tocca i passi vicini */
+.node.ring::before { bottom: calc(100% + 22px); }
+.node.ring::after { content: ''; position: absolute; inset: -10px -10px -16px; border-radius: 50%; background: conic-gradient(var(--c) calc(var(--p) * 1turn), var(--grey) 0);
+  mask: radial-gradient(closest-side, #0000 calc(100% - 7px), #000 calc(100% - 6px)), repeating-conic-gradient(from 4deg, #000 0 calc(1turn / var(--n) - 8deg), #0000 0 calc(1turn / var(--n)));
+  mask-composite: intersect; }
 @keyframes bob { to { transform: translateY(-5px); } }
 
 .btn { border: 0; border-radius: 16px; padding: 14px 24px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #fff; background: var(--green); box-shadow: 0 4px 0 var(--green-dark); }
@@ -154,7 +160,7 @@ img.swatch { object-fit: cover; }
 .empty { margin: 0; color: var(--muted); font-weight: 700; }
 
 /* avatar nel gioco */
-.here { position: absolute; left: calc(100% + 10px); top: 50%; translate: 0 -50%; width: 46px; border: 3px solid #fff; box-shadow: 0 2px 0 var(--grey); }
+.here { position: absolute; left: calc(100% + 20px); top: 50%; translate: 0 -50%; width: 46px; border: 3px solid #fff; box-shadow: 0 2px 0 var(--grey); }
 .unlock { display: flex; align-items: center; gap: 12px; text-align: left; border-color: #ce82ff; }
 .unlock .avatar { width: 60px; flex: none; }
 .unlock span { flex: 1; display: flex; flex-direction: column; }
