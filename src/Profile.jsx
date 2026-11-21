@@ -42,6 +42,10 @@ export function Profile({ progress, onChange, onEdit, onBack }) {
           <div key={label} className="card stat"><strong>{icon} {value}</strong><small>{label}</small></div>
         ))}
       </div>
+      {/* attribuzione chiesta dalla licenza gratuita di Flaticon; quale icona è di chi, coi link: README */}
+      <footer className="credits">
+        Icone di Vectorsclub e Magnific da <a href="https://www.flaticon.com/" target="_blank" rel="noreferrer">Flaticon</a>
+      </footer>
     </main>
   )
 }

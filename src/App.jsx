@@ -12,7 +12,7 @@ const STEP_UI = [
   { icon: '/dumbbell.png', label: 'Allenamento' },
   { icon: '/puzzle.png', label: 'Sillabe' },
   { icon: '/feather.png', label: 'Scrittura' },
-  { icon: '/trophy.png', label: 'Ripasso' },
+  { icon: '/quiz.png', label: 'Ripasso' },
 ]
 const KEY = 'capitali-progress' // nome storico del progetto: cambiarlo cancellerebbe i progressi salvati
 const EMPTY = { done: [], parts: {}, xp: 0, streak: 0, best: 0, lastDay: null, last: null, name: '', avatar: {} }

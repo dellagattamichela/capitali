@@ -60,6 +60,9 @@ Per provarla sul telefono nella stessa rete: `npm run dev -- --host` e apri l'in
 | `public/` | Icona (`favicon.svg` è l'originale), PNG per il telefono, manifest |
 
 Bandiere da [flagcdn.com](https://flagcdn.com), font Nunito da Google Fonts: servono la connessione.
+Icone dei passi e del lucchetto da Flaticon: la licenza gratuita chiede l'attribuzione, che nell'app è in fondo al profilo (`src/Profile.jsx`). Nel dettaglio:
+[bersaglio](https://www.flaticon.com/free-icons/bullseye) di Vectorsclub;
+[manubrio](https://www.flaticon.com/free-icons/gym), [puzzle](https://www.flaticon.com/free-icons/puzzle), [piuma](https://www.flaticon.com/free-icons/pen-drive), [quiz](https://www.flaticon.com/free-icons/quiz) e [lucchetto](https://www.flaticon.com/free-icons/lock) di Magnific.
 
 ## Modificare i contenuti
 

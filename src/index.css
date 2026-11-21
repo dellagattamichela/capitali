@@ -54,9 +54,7 @@ button.card:not(:disabled):active { transform: translateY(2px); border-bottom-wi
 .nodes { display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 60px 0 36px; }
 .node { position: relative; width: 72px; height: 66px; border: 0; border-radius: 50%; font-size: 1.8rem; background: var(--grey); box-shadow: 0 6px 0 #c9c9c9; translate: calc(sin(var(--k) * 45deg) * 70px) 0; }
 .node img { display: block; width: 30px; margin: auto; }
-.node img.review { width: 38px; } /* il trofeo ha più spazio vuoto intorno nel disegno */
-/* trofeo giallo sul passo fatto, anch'esso giallo: un bordino bianco lo stacca */
-.node.done img.review { filter: drop-shadow(1.5px 0 #fff) drop-shadow(-1.5px 0 #fff) drop-shadow(0 1.5px #fff) drop-shadow(0 -1.5px #fff); }
+.node img.review { width: 28px; } /* il cervello riempie quasi tutto il disegno: un po' più piccolo pesa come le altre */
 .node.done { background: #ffc800; box-shadow: 0 6px 0 #e0a800; }
 .node.current { background: var(--c); box-shadow: 0 6px 0 color-mix(in srgb, var(--c), #000 20%); }
 .node:disabled { filter: grayscale(1); opacity: .5; }
@@ -117,7 +115,6 @@ button.card:not(:disabled):active { transform: translateY(2px); border-bottom-wi
 .feedback strong { font-size: 1.4rem; font-weight: 900; }
 
 .done { justify-content: center; text-align: center; }
-.trophy { font-size: 5rem; }
 .done h1 { color: #ffc800; font-size: 2rem; }
 .done h1.fail { color: var(--red); }
 .done .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -135,6 +132,8 @@ button.card:not(:disabled):active { transform: translateY(2px); border-bottom-wi
 .name:focus { outline: none; border-color: var(--blue); }
 .name::placeholder { color: #afafaf; }
 .since { margin: -8px 0 8px; color: var(--muted); font-weight: 700; }
+.credits { margin-top: auto; padding-top: 24px; text-align: center; font-size: .75rem; color: #afafaf; } /* in fondo alla pagina */
+.credits a { color: inherit; }
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .stat strong { display: block; font-size: 1.4rem; }
 .stat small { color: var(--muted); font-weight: 700; font-size: .9rem; }
