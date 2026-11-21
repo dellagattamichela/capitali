@@ -155,7 +155,6 @@ button.card:not(:disabled):active { transform: translateY(2px); border-bottom-wi
 .choice { display: grid; place-items: center; gap: 4px; padding: 6px; }
 .choice.selected { border-color: var(--blue-border); background: var(--blue-bg); }
 .choice .avatar { width: 100%; }
-.avatar.zoom img { scale: 1.8; transform-origin: 64% 52%; }
 .swatch { width: 52px; aspect-ratio: 1; border-radius: 50%; border: 2px solid rgb(0 0 0 / .1); }
 
 /* editor dell'avatar */

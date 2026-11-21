@@ -1,6 +1,6 @@
 // Avatar come dati: niente JSX, così è testabile con node --test.
-// I disegni sono lo stile «Big Smile» di DiceBear (https://www.dicebear.com/styles/big-smile/):
-// qui ci sono i nomi italiani delle sue varianti, i colori e le condizioni di sblocco.
+// I disegni sono lo stile «Big Smile» di DiceBear (https://www.dicebear.com/styles/big-smile/), più barba e baffi
+// disegnati qui in fondo: qui ci sono i nomi italiani delle varianti, i colori e le condizioni di sblocco.
 import { Avatar, Style } from '@dicebear/core'
 import bigSmile from '@dicebear/styles/big-smile.json' with { type: 'json' }
 import { PATHS } from './data.js'
@@ -32,8 +32,10 @@ const HAIR = {
   corti: 'shortHair', lisci: 'straightHair', frangia: 'bangs', 'a scodella': 'bowlCutHair', trecce: 'braids', chignon: 'bunHair', caschetto: 'wavyBob',
   'caschetto riccio': 'curlyBob', ricci: 'curlyShortHair', 'chignon riccio': 'froBun', undercut: 'halfShavedHead', cresta: 'mohawk', rasati: 'shavedHead',
 }
+const BEARDS = { nessuna: {}, accennata: 'stubble', corta: 'short' }
+const MUSTACHES = { nessuno: {}, folti: 'bushy', sottili: 'pencil', 'a manubrio': 'handlebar' }
 const ACCESSORIES = {
-  nessuno: {}, occhiali: 'glasses', baffi: 'mustache', 'naso da clown': 'clownNose', mascherina: 'faceMask', 'benda per dormire': 'sleepMask',
+  nessuno: {}, occhiali: 'glasses', 'naso da clown': 'clownNose', mascherina: 'faceMask', 'benda per dormire': 'sleepMask',
   'da sole': { variant: 'sunglasses', unlock: { units: 1 } },
   'orecchie da gatto': { variant: 'catEars', unlock: { best: 7 } },
   corona: { variant: 'sailormoonCrown', unlock: { xp: 500 } },
@@ -48,14 +50,16 @@ const BGS = {
 const opts = (table) =>
   Object.fromEntries(Object.entries(table).map(([k, o]) => [k, typeof o !== 'string' ? o : o.startsWith('#') ? { color: o } : { variant: o }]))
 
-// le parti con una variante hanno lo stesso nome del componente di Big Smile
+// le parti con una variante hanno lo stesso nome del componente DiceBear (vedi COMPONENTS)
 export const SLOTS = {
   skin: { label: 'Pelle', options: opts(SKIN) },
   eyes: { label: 'Occhi', options: opts(EYES) },
   eyeColor: { label: 'Colore occhi', options: opts(EYE_COLOR) },
   mouth: { label: 'Bocca', options: opts(MOUTHS) },
   hair: { label: 'Stile', options: opts(HAIR) },
-  hairColor: { label: 'Colore', options: opts(HAIR_COLOR) },
+  hairColor: { label: 'Colore (anche di barba e baffi)', options: opts(HAIR_COLOR) },
+  beard: { label: 'Barba', options: opts(BEARDS) },
+  mustache: { label: 'Baffi', options: opts(MUSTACHES) },
   accessories: { label: 'Accessori', options: opts(ACCESSORIES) },
   // accessory: nell'editor compare solo con quell'accessorio addosso
   glassesColor: { label: 'Colore occhiali', accessory: 'occhiali', options: opts(GLASSES_COLOR) },
@@ -70,7 +74,7 @@ export const MOODS = {
 }
 
 export const DEFAULT = {
-  skin: 'chiara', eyes: 'tondi', eyeColor: 'scuri', mouth: 'sorriso', hair: 'corti', hairColor: 'castani',
+  skin: 'chiara', eyes: 'tondi', eyeColor: 'scuri', mouth: 'sorriso', hair: 'corti', hairColor: 'castani', beard: 'nessuna', mustache: 'nessuno',
   accessories: 'nessuno', glassesColor: 'oro', lensColor: 'scure', pin: 'nessuna', bg: 'azzurro',
 }
 
@@ -119,13 +123,104 @@ export const randomAvatar = (stats) => ({
   pin: anyOf(['nessuna', ...stats.learned.map((c) => c.code)]),
 })
 
+// --- lo stile: Big Smile con qualche aggiunta ---
+
+const el = (name, attributes, children) => ({ type: 'element', name, attributes, ...(children && { children }) })
+const hair = { type: 'color', name: 'hair' }
+const { canvas, components: parts, colors } = bigSmile
+
 // Big Smile fa scegliere solo i colori di pelle e capelli: i colori fissi di occhi e occhiali diventano colori
 // scelti, e le sopracciglia (#71472D negli occhi) prendono il colore dei capelli
 const recolor = (part, map) =>
   JSON.parse(JSON.stringify(part).replace(/"fill":"(#\w{6})"/g, (m, c) => (map[c] ? `"fill":{"type":"color","name":"${map[c]}"}` : m)))
-const { components: parts, colors } = bigSmile
+
+// i componenti sono posizionati da matrix(a 0 0 d e f): questa porta le coordinate di `from` in quelle di `to`
+const matrix = (name) => canvas.elements.find((e) => e.name === name).attributes.transform.match(/[-\d.]+/g).map(Number)
+function between(from, to) {
+  const [a, , , d, e, f] = matrix(from)
+  const [A, , , D, E, F] = matrix(to)
+  return `matrix(${a / A} 0 0 ${d / D} ${(e - E) / A} ${(f - F) / D})`
+}
+
+// Barba e baffi: in Big Smile non ci sono, si disegnano nelle coordinate della testa (428 x 388) col colore dei capelli.
+// La barba è il contorno della testa (così segue la mascella) mostrato solo nella sua zona: sotto la "linea della
+// barba" (basetta davanti all'orecchio → sotto la guancia → all'altezza della bocca) più un contorno attorno alla
+// bocca, labbro di sopra compreso. Il contorno dipende dalla forma della bocca: una variante per ogni tipo × bocca.
+const [HEAD, CHEEKS, NOSE, EAR, EAR_IN] = parts.head.variants.base.elements
+const BEARD_LINE = 'M-40 212 H92 C105 255 140 300 200 312 C220 306 232 292 250 286 H460 V460 H-40 Z'
+const STUBBLE = el('pattern', { id: 'beard-stubble', width: '8', height: '8', patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(25)' }, [
+  el('circle', { cx: '2', cy: '2', r: '1.4', fill: hair }),
+])
+// strati della barba: il contorno della testa con questi attributi
+const BEARD_TYPES = {
+  stubble: [{ opacity: '.15' }, { fill: 'url(#beard-stubble)', opacity: '.55' }], // velatura + puntini
+  short: [{ stroke: hair, 'stroke-width': '10' }], // il tratto la fa sporgere un poco oltre il mento
+}
+// la sagoma della bocca (coordinate della bocca → della testa) allargata di width / 2, per le maschere
+const mouthOutline = (elements, width, dy = 0) => el('g', { transform: `translate(0 ${dy}) ${between('mouth', 'head')}` }, elements.map((e) => ({
+  ...e, attributes: { ...e.attributes, fill: '#fff', stroke: '#fff', 'stroke-width': width, 'stroke-linejoin': 'round' },
+})))
+function beardFor(type, mouth, { elements }) {
+  const [area, lips] = [`beard-area-${mouth}`, `beard-lips-${mouth}`]
+  return {
+    elements: [
+      el('defs', {}, [
+        STUBBLE,
+        el('mask', { id: area }, [
+          el('path', { d: BEARD_LINE, fill: '#fff' }),
+          mouthOutline(elements, '46', 6), // contorno di 23, spostato in giù: sopra la bocca resta più sottile
+          el('ellipse', { cx: '338', cy: '219', rx: '22', ry: '10', fill: '#000' }), // il naso resta scoperto
+        ]),
+        el('mask', { id: lips }, [mouthOutline(elements, '10')]),
+      ]),
+      ...BEARD_TYPES[type].map((attributes) => el('g', { mask: `url(#${area})` }, [el('path', { d: HEAD.attributes.d, fill: hair, ...attributes })])),
+      el('g', { mask: `url(#${lips})` }, [HEAD, CHEEKS, NOSE]), // un filo di pelle attorno alla bocca: le labbra
+      EAR, EAR_IN, // l'orecchio resta davanti alla barba
+    ],
+  }
+}
+// nome della variante: tipo + bocca, es. "shortOpenedSmile"
+const beardVariant = (type, mouth) => type + mouth[0].toUpperCase() + mouth.slice(1)
+const BEARD = {
+  width: parts.head.width,
+  height: parts.head.height,
+  variants: Object.fromEntries(Object.keys(BEARD_TYPES).flatMap((type) =>
+    Object.entries(parts.mouth.variants).map(([mouth, variant]) => [beardVariant(type, mouth), beardFor(type, mouth, variant)]))),
+}
+const shape = (d) => el('path', { d, fill: hair })
+const line = (d, width) => el('path', { d, fill: 'none', stroke: hair, 'stroke-width': width, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })
+// i baffi di Big Smile (erano un accessorio) col colore dei capelli, più l'ombra che avevano
+const BUSHY = parts.accessories.variants.mustache.elements.flatMap((e) => [
+  { ...e, attributes: { ...e.attributes, fill: hair } },
+  ...(e.attributes.fill === '#5E351B' ? [{ ...e, attributes: { ...e.attributes, fill: '#000', opacity: '.15' } }] : []),
+])
+const MUSTACHE = {
+  width: parts.head.width,
+  height: parts.head.height,
+  variants: {
+    bushy: { elements: [el('g', { transform: between('accessories', 'head') }, BUSHY)] },
+    pencil: {
+      elements: [
+        shape('M246 252 C268 230 306 226 336 232 C338 240 336 246 332 249 C300 244 272 246 246 252 Z'),
+        shape('M344 232 C370 230 392 236 406 250 C386 246 366 246 348 249 C343 246 341 239 344 232 Z'),
+      ],
+    },
+    handlebar: {
+      elements: [
+        line('M336 238 C306 228 282 264 250 250 C232 242 234 220 250 218', '16'),
+        line('M342 238 C366 230 386 258 408 246 C419 239 418 223 407 221', '13'),
+        el('ellipse', { cx: '339', cy: '240', rx: '17', ry: '11', fill: hair }),
+      ],
+    },
+  },
+}
+// la barba subito dopo la testa (sotto la bocca), i baffi subito dopo la bocca. [componente, posizionato come]
+const ADD = { head: [['beard', 'head']], mouth: [['mustache', 'head']] }
+const at = (name) => canvas.elements.find((e) => e.name === name).attributes
+
 const style = new Style({
   ...bigSmile,
+  canvas: { ...canvas, elements: canvas.elements.flatMap((e) => [e, ...(ADD[e.name] ?? []).map(([name, pos]) => ({ type: 'component', name, attributes: at(pos) }))]) },
   components: {
     ...parts,
     eyes: recolor(parts.eyes, { '#2A1200': 'eye', '#71472D': 'hair' }),
@@ -137,25 +232,38 @@ const style = new Style({
         sunglasses: recolor(parts.accessories.variants.sunglasses, { '#595757': 'lens' }),
       },
     },
+    beard: BEARD,
+    mustache: MUSTACHE,
   },
   colors: { ...colors, eye: { values: ['#2A1200'] }, glasses: { values: ['#C5900F'] }, lens: { values: ['#595757'] } },
 })
 
+// le parti disegnate da un componente; "nessuno" (niente variante) = probabilità 0
+const COMPONENTS = ['hair', 'eyes', 'mouth', 'beard', 'mustache', 'accessories']
+
+// anteprime ingrandite dell'editor, dentro il disegno (uno zoom CSS uscirebbe dal cerchio su Safari): DiceBear
+// ingrandisce attorno al centro, poi sposta in % del disegno; spostamento = -scala × (centro della zona - 50)
+const ZOOMS = {
+  eyes: { scale: 1.8, translateX: -31.5, translateY: 10.8 }, // occhi e sopracciglia: x 54-81%, y 30-58%
+  mouth: { scale: 1.6, translateX: -25.6, translateY: -26.4 }, // bocca e baffi: x 46-86%, y 53-80%
+}
+
 // immagine dell'avatar (data URI, senza sfondo né spilla); mood: "felice" / "triste" sostituisce occhi e bocca
-export function avatarUri(saved, mood) {
+export function avatarUri(saved, mood, zoom) {
   const a = { ...full(saved), ...MOODS[mood] }
   const opt = (slot) => SLOTS[slot].options[a[slot]]
-  const accessory = opt('accessories').variant
-  return new Avatar(style, {
+  const options = {
     skinColor: opt('skin').color,
     hairColor: opt('hairColor').color,
     eyeColor: opt('eyeColor').color,
     glassesColor: opt('glassesColor').color,
     lensColor: opt('lensColor').color,
-    hairVariant: opt('hair').variant,
-    eyesVariant: opt('eyes').variant,
-    mouthVariant: opt('mouth').variant,
-    accessoriesProbability: accessory ? 100 : 0,
-    ...(accessory && { accessoriesVariant: accessory }),
-  }).toDataUri()
+  }
+  for (const slot of COMPONENTS) {
+    const { variant } = opt(slot)
+    options[`${slot}Probability`] = variant ? 100 : 0
+    if (variant) options[`${slot}Variant`] = variant
+  }
+  if (options.beardVariant) options.beardVariant = beardVariant(options.beardVariant, options.mouthVariant)
+  return new Avatar(style, { ...options, ...ZOOMS[zoom] }).toDataUri()
 }

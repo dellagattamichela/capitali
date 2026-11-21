@@ -1,6 +1,5 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import bigSmile from '@dicebear/styles/big-smile.json' with { type: 'json' }
 import { DEFAULT, MOODS, SLOTS, avatarStats, avatarUri, full, isUnlocked, newUnlocks, randomAvatar } from './avatarData.js'
 import { nodesOf } from './game.js'
 import { PATHS } from './data.js'
@@ -20,14 +19,23 @@ test('gli umori usano opzioni esistenti', () => {
   for (const m of Object.values(MOODS)) for (const [slot, name] of Object.entries(m)) assert.ok(SLOTS[slot].options[name], `${slot}: ${name}`)
 })
 
-test('varianti esistenti in Big Smile e avatar disegnabili', () => {
+test('ogni variante viene davvero disegnata', () => {
+  // DiceBear salta in silenzio le varianti che non esistono: nel disegno c'è <g id="componente-variante-...">
+  // (la barba ha un nome per ogni bocca: "beard-shortOpenedSmile-...", e conta l'inizio)
+  const drawn = (uri, slot, variant) => decodeURIComponent(uri).includes(`id="${slot}-${variant}`)
   for (const [slot, s] of Object.entries(SLOTS)) {
     for (const [name, o] of Object.entries(s.options)) {
-      if (o.variant) assert.ok(bigSmile.components[slot].variants[o.variant], `${slot}/${name}: ${o.variant}`)
-      if (!o.hidden) assert.match(avatarUri({ [slot]: name }), /^data:image\/svg\+xml/, `${slot}/${name}`)
+      if (o.variant && !o.hidden) assert.ok(drawn(avatarUri({ [slot]: name }), slot, o.variant), `${slot}/${name}`)
     }
   }
-  for (const mood of Object.keys(MOODS)) assert.match(avatarUri({}, mood), /^data:image\/svg\+xml/, mood)
+  for (const [mood, parts] of Object.entries(MOODS)) {
+    for (const [slot, name] of Object.entries(parts)) assert.ok(drawn(avatarUri({}, mood), slot, SLOTS[slot].options[name].variant), `${mood}: ${slot}`)
+  }
+  assert.ok(!decodeURIComponent(avatarUri({})).includes('id="beard-'), 'senza barba non si disegna niente')
+  for (const mouth of Object.keys(SLOTS.mouth.options)) {
+    for (const beard of ['accennata', 'corta']) assert.ok(drawn(avatarUri({ beard, mouth }), 'beard', SLOTS.beard.options[beard].variant), `${beard} + ${mouth}`)
+  }
+  for (const mood of Object.keys(MOODS)) assert.ok(drawn(avatarUri({ beard: 'corta' }, mood), 'beard', 'short'), `barba + ${mood}`)
 })
 
 test('i colori scelti arrivano al disegno', () => {
@@ -36,6 +44,7 @@ test('i colori scelti arrivano al disegno', () => {
   assert.ok(has({ accessories: 'occhiali', glassesColor: 'rossi' }, 'glassesColor'))
   assert.ok(has({ accessories: 'da sole', lensColor: 'rosa' }, 'lensColor'))
   assert.ok(has({ hairColor: 'verdi', hair: 'rasati' }, 'hairColor'))
+  assert.ok(has({ hairColor: 'blu', beard: 'pizzetto', mustache: 'sottili' }, 'hairColor'))
 })
 
 test('full ripara gli avatar salvati', () => {

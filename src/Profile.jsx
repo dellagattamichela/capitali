@@ -6,10 +6,12 @@ import { learned, streakOn, today } from './game'
 
 const TABS = [
   { icon: '😀', label: 'Viso', slots: ['skin', 'eyes', 'eyeColor', 'mouth'] },
-  { icon: '💇', label: 'Capelli', slots: ['hair', 'hairColor'] },
+  { icon: '💇', label: 'Capelli e barba', slots: ['hair', 'hairColor', 'beard', 'mustache'] },
   { icon: '🕶️', label: 'Accessori', slots: ['accessories', 'glassesColor', 'lensColor', 'pin'] },
   { icon: '🖼️', label: 'Sfondo', slots: ['bg'] },
 ]
+
+const ZOOM = { eyes: 'eyes', mouth: 'mouth', mustache: 'mouth' }
 
 export function Profile({ progress, onChange, onEdit, onBack }) {
   const streak = streakOn(progress, today())
@@ -96,9 +98,9 @@ export function AvatarEditor({ avatar, stats, onSave, onBack }) {
         <div className="choices">
           {Object.entries(options).filter(([, o]) => !o.hidden).map(([name, o]) =>
             choice(slot, name, name,
-              // i colori come pastiglie, le varianti come anteprima dell'avatar (senza spilla, occhi e bocca ingranditi)
+              // i colori come pastiglie, le varianti come anteprima dell'avatar (senza spilla, viso ingrandito per i dettagli piccoli)
               o.color ? <span className="swatch" style={{ background: o.color }} />
-                : <Avatar a={{ ...draft, pin: 'nessuna', [slot]: name }} className={slot === 'eyes' || slot === 'mouth' ? 'zoom' : ''} />,
+                : <Avatar a={{ ...draft, pin: 'nessuna', [slot]: name }} zoom={ZOOM[slot]} />,
               !isUnlocked(o, stats) && unlockHint(o)))}
         </div>
       </section>
