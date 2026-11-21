@@ -1,56 +1,164 @@
-import { useState } from 'react'
-import { COUNTRIES } from './data'
-import { makeLesson, normalize } from './game'
+import { useEffect, useState } from 'react'
+import { PATHS } from './data'
+import { XP_PER_LESSON, finishLesson, makeLesson, nodesOf, normalize, streakOn, today, unitDone } from './game'
 
-const LEVELS = [
-  { id: 'easy', title: 'Facile', desc: 'Scegli tra 4 risposte', icon: '🎯' },
-  { id: 'medium', title: 'Intermedio', desc: 'Componi il nome con le sillabe', icon: '🧩' },
-  { id: 'hard', title: 'Difficile', desc: 'Scrivi il nome a mano', icon: '✍️' },
-]
-const LESSON_LENGTH = 10
+const STEP_UI = {
+  easy: { icon: '🎯', label: 'Scelta multipla' },
+  medium: { icon: '🧩', label: 'Sillabe' },
+  hard: { icon: '✍️', label: 'Scrittura' },
+  review: { icon: '🏆', label: 'Ripasso' },
+}
+const KEY = 'capitali-progress'
+const EMPTY = { done: [], xp: 0, streak: 0, lastDay: null, last: null }
 
-export default function App() {
-  const [lesson, setLesson] = useState(null)
-  const start = (level) => setLesson({ level, questions: makeLesson(level, COUNTRIES, LESSON_LENGTH), id: Date.now() })
-
-  if (!lesson) {
-    return (
-      <main className="menu">
-        <h1>🌍 Capitali</h1>
-        <p className="subtitle">Scegli un livello</p>
-        {LEVELS.map((l) => (
-          <button key={l.id} className="card level" onClick={() => start(l.id)}>
-            <span className="icon">{l.icon}</span>
-            <span><strong>{l.title}</strong><small>{l.desc}</small></span>
-          </button>
-        ))}
-      </main>
-    )
+function load() {
+  try {
+    return { ...EMPTY, ...JSON.parse(localStorage.getItem(KEY)) }
+  } catch {
+    return EMPTY
   }
-  return <Lesson key={lesson.id} {...lesson} onExit={() => setLesson(null)} onRestart={() => start(lesson.level)} />
 }
 
-function Lesson({ level, questions, onExit, onRestart }) {
-  const empty = level === 'medium' ? [] : ''
+export default function App() {
+  const [progress, setProgress] = useState(load)
+  const [pathId, setPathId] = useState(null)
+  const [lesson, setLesson] = useState(null)
+  useEffect(() => {
+    localStorage.setItem(KEY, JSON.stringify(progress))
+  }, [progress])
+
+  const start = (path, node) => {
+    setPathId(path.id) // uscendo dalla lezione si torna al percorso
+    setLesson({ path, node, questions: makeLesson(path, node), id: Date.now() })
+  }
+
+  if (lesson) {
+    const finish = () => setProgress((p) => finishLesson(p, lesson.path.id, lesson.node.id, today()))
+    return <Lesson key={lesson.id} {...lesson} onFinish={finish} onExit={() => setLesson(null)} />
+  }
+  const path = PATHS.find((p) => p.id === pathId)
+  if (path) return <PathView path={path} done={progress.done} onStart={(n) => start(path, n)} onBack={() => setPathId(null)} />
+  return <Home progress={progress} onOpen={setPathId} onStart={start} />
+}
+
+const count = (units) => units.reduce((n, u) => n + u.countries.length, 0)
+
+function Home({ progress, onOpen, onStart }) {
+  const { done } = progress
+  const last = PATHS.find((p) => p.id === progress.last) ?? PATHS[0]
+  const next = nodesOf(last).find((n) => !done.includes(n.id))
+
+  return (
+    <main className="home">
+      <header className="stats">
+        <span className="streak" title="Giorni di fila">🔥 {streakOn(progress, today())}</span>
+        <span className="xp">⚡ {progress.xp} XP</span>
+      </header>
+      <h1>🌍 Capitali</h1>
+
+      {next && (
+        <div className="card continue">
+          <span>
+            <small>{progress.last ? 'Continua' : 'Inizia da qui'}</small>
+            <strong>{last.title} · Unità {next.u + 1}</strong>
+          </span>
+          <button className="btn green" onClick={() => onStart(last, next)}>Vai</button>
+        </div>
+      )}
+
+      {PATHS.map((p) => {
+        const open = !p.unlockedBy || unitDone(p.unlockedBy, done)
+        const nodes = nodesOf(p)
+        const pct = (nodes.filter((n) => done.includes(n.id)).length / nodes.length) * 100
+        const learned = count(p.units.filter((u) => unitDone(`${p.id}.${u.id}`, done)))
+        const [reqPath, reqUnit] = p.unlockedBy?.split('.') ?? []
+        const req = PATHS.find((x) => x.id === reqPath)?.units.find((u) => u.id === reqUnit)
+        return (
+          <button key={p.id} className={`card path-card ${p.unlockedBy ? 'sub' : ''}`} disabled={!open} onClick={() => onOpen(p.id)}>
+            <span className="icon">{open ? p.icon : '🔒'}</span>
+            <span className="info">
+              <strong>{p.title}</strong>
+              {open ? (
+                <span className="meter">
+                  <span className="progress"><span style={{ width: `${pct}%` }} /></span>
+                  <small>{learned}/{count(p.units)}</small>
+                </span>
+              ) : (
+                <small>Completa l'unità «{req.title}» per sbloccarlo</small>
+              )}
+            </span>
+          </button>
+        )
+      })}
+    </main>
+  )
+}
+
+function PathView({ path, done, onStart, onBack }) {
+  const nodes = nodesOf(path)
+  const current = nodes.findIndex((n) => !done.includes(n.id))
+  useEffect(() => {
+    document.querySelector('.node.current')?.scrollIntoView({ block: 'center' })
+  }, [])
+
+  return (
+    <main className="path">
+      <header className="top">
+        <button type="button" className="close" onClick={onBack} aria-label="Indietro">←</button>
+        <h1>{path.icon} {path.title}</h1>
+      </header>
+      {path.units.map((unit, u) => (
+        <section key={unit.id} className="unit">
+          <h2>
+            <small>Unità {u + 1}</small>
+            {unit.title}
+            <span>{unit.countries.map((c) => c.name).join(', ')}</span>
+          </h2>
+          <div className="nodes">
+            {nodes.filter((n) => n.u === u).map((n) => {
+              const k = nodes.indexOf(n)
+              const state = done.includes(n.id) ? 'done' : k === current ? 'current' : 'locked'
+              const { icon, label } = STEP_UI[n.type]
+              return (
+                <button key={n.id} type="button" className={`node ${state}`} style={{ '--k': k }}
+                  disabled={state === 'locked'} onClick={() => onStart(n)}
+                  aria-label={`${label}${state === 'done' ? ', completata' : state === 'locked' ? ', bloccata' : ''}`}>
+                  {icon}
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      ))}
+    </main>
+  )
+}
+
+const emptyFor = (q) => (q?.level === 'medium' ? [] : '')
+
+function Lesson({ path, questions, onFinish, onExit }) {
+  const [queue, setQueue] = useState(questions) // le domande sbagliate si ripetono in fondo
   const [i, setI] = useState(0)
-  const [answer, setAnswer] = useState(empty)
+  const [answer, setAnswer] = useState(emptyFor(questions[0]))
   const [result, setResult] = useState(null) // null = non ancora verificato, true/false = esito
   const [score, setScore] = useState(0)
 
-  if (i === questions.length) {
+  if (i === queue.length) {
     return (
       <main className="done">
         <div className="trophy">🏆</div>
         <h1>Lezione completata!</h1>
-        <div className="card score"><small>Risposte corrette</small><strong>{score}/{questions.length}</strong></div>
-        <button className="btn green" onClick={onRestart}>Ripeti</button>
-        <button className="btn ghost" onClick={onExit}>Menu</button>
+        <div className="row">
+          <div className="card score"><small>XP</small><strong>+{XP_PER_LESSON}</strong></div>
+          <div className="card score"><small>Precisione</small><strong>{Math.round((100 * questions.length) / queue.length)}%</strong></div>
+        </div>
+        <button className="btn green" onClick={onExit}>Continua</button>
       </main>
     )
   }
 
-  const q = questions[i]
-  const given = level === 'medium' ? answer.map((t) => q.tiles[t]).join('') : answer
+  const q = queue[i]
+  const given = q.level === 'medium' ? answer.map((t) => q.tiles[t]).join('') : answer
   const done = result !== null
 
   function submit(e) {
@@ -61,8 +169,11 @@ function Lesson({ level, questions, onExit, onRestart }) {
       setResult(ok)
       if (ok) setScore((s) => s + 1)
     } else {
+      const next = result ? queue : [...queue, { ...q, isNew: false }]
+      if (i + 1 === next.length) onFinish()
+      setQueue(next)
       setI(i + 1)
-      setAnswer(empty)
+      setAnswer(emptyFor(next[i + 1]))
       setResult(null)
     }
   }
@@ -71,17 +182,19 @@ function Lesson({ level, questions, onExit, onRestart }) {
     <form className="lesson" onSubmit={submit}>
       <header className="top">
         <button type="button" className="close" onClick={onExit} aria-label="Esci">✕</button>
-        <div className="progress"><div style={{ width: `${((i + done) / questions.length) * 100}%` }} /></div>
+        <div className="progress"><div style={{ width: `${(score / questions.length) * 100}%` }} /></div>
       </header>
 
       <section className="question" key={i}>
-        <h2>Qual è la capitale?</h2>
+        <h2>{path.question ?? 'Qual è la capitale?'}</h2>
+        {q.isNew && <p className="tip"><span className="badge">Nuovo</span> La risposta è <strong>{q.capital}</strong></p>}
         <div className="country">
-          <img src={`https://flagcdn.com/w320/${q.code}.png`} srcSet={`https://flagcdn.com/w640/${q.code}.png 2x`} alt={`Bandiera: ${q.name}`} />
+          {/* decorativa: il nome è già nel fumetto (e per le regioni è il tricolore) */}
+          <img src={`https://flagcdn.com/w320/${q.code}.png`} srcSet={`https://flagcdn.com/w640/${q.code}.png 2x`} alt="" />
           <span className="bubble">{q.name}</span>
         </div>
 
-        {level === 'easy' && (
+        {q.level === 'easy' && (
           <div className="options">
             {q.options.map((o) => (
               <button type="button" key={o} disabled={done} onClick={() => setAnswer(o)}
@@ -92,7 +205,7 @@ function Lesson({ level, questions, onExit, onRestart }) {
           </div>
         )}
 
-        {level === 'medium' && (
+        {q.level === 'medium' && (
           <>
             <div className="answer-line">
               {answer.map((t, k) => (
@@ -107,9 +220,9 @@ function Lesson({ level, questions, onExit, onRestart }) {
           </>
         )}
 
-        {level === 'hard' && (
+        {q.level === 'hard' && (
           <input className="card text" value={answer} onChange={(e) => setAnswer(e.target.value)} readOnly={done}
-            placeholder="Scrivi la capitale…" aria-label="Capitale" autoFocus autoComplete="off" spellCheck={false} />
+            placeholder="Scrivi la risposta…" aria-label="Risposta" autoFocus autoComplete="off" spellCheck={false} />
         )}
       </section>
 
