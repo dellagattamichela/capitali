@@ -11,7 +11,7 @@ const STEP_UI = {
   hard: { icon: '✍️', label: 'Scrittura' },
   review: { icon: '🏆', label: 'Ripasso' },
 }
-const KEY = 'capitali-progress'
+const KEY = 'capitali-progress' // nome storico del progetto: cambiarlo cancellerebbe i progressi salvati
 const EMPTY = { done: [], xp: 0, streak: 0, best: 0, lastDay: null, last: null, name: '', avatar: {} }
 const TEST_LIVES = 3
 
@@ -110,7 +110,7 @@ function Home({ progress, onOpen, onStart }) {
           <Avatar a={progress.avatar} view="head" />
         </button>
       </header>
-      <h1><img className="logo" src="/favicon.svg" alt="" /> Capitali</h1>
+      <h1><img className="logo" src="/favicon.svg" alt="" /> Giramondo</h1>
 
       {next && (
         <div className="card continue">

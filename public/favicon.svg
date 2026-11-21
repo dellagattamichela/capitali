@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Icona di Capitali: mappamondo con la puntina della capitale (la stella è il simbolo delle capitali sulle mappe).
+  <!-- Icona di Giramondo: mappamondo con la puntina della capitale (la stella è il simbolo delle capitali sulle mappe).
        Sfondo pieno fino ai bordi: Android e iOS ritagliano da soli angoli e forma; il disegno resta nel cerchio
        centrale "sicuro" (raggio ~205). Se lo modifichi, rigenera i PNG per il telefono con: npm run icons -->
 

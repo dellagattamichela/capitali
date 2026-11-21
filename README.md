@@ -1,10 +1,10 @@
-# Capitali
+# Giramondo
 
 App per imparare le capitali del mondo in stile Duolingo: si sceglie un continente e si segue un percorso a unità, dalle capitali più famose a quelle meno note, con lezioni sempre più difficili.
 
 **👉 Provala qui: [capitali-five.vercel.app](https://capitali-five.vercel.app/)**
 
-<img src="public/favicon.svg" alt="Icona di Capitali" width="96">
+<img src="public/favicon.svg" alt="Icona di Giramondo" width="96">
 
 ## Perché esiste
 
@@ -17,7 +17,7 @@ Se può essere utile anche a te, tanto meglio! 🤗❤️
 - **Percorsi**: Europa, Americhe, Asia, Africa, Oceania (194 stati: membri ONU + Vaticano), più due sotto-percorsi che si sbloccano completando la prima unità del continente: **Capoluoghi d'Italia** (20 regioni) e **Stati Uniti** (50 stati).
 - **Lezioni**: ogni unità ha 5 passi — scelta multipla (2 volte, alla prima apparizione la risposta è mostrata), sillabe da comporre, risposta da scrivere, ripasso misto con le unità precedenti e domande al contrario ("di quale paese è capitale…"). Le risposte sbagliate si ripetono in fondo alla lezione.
 - **Salta qui**: un test con 3 vite per saltare a un'unità più avanti.
-- **Progressi**: XP, giorni di fila, record, città imparate. Tutto salvato nel browser (`localStorage`, chiave `capitali-progress`), nessun account né server.
+- **Progressi**: XP, giorni di fila, record, città imparate. Tutto salvato nel browser (`localStorage`, chiave `capitali-progress`: il nome storico del progetto, non cambiarla o si perdono i progressi), nessun account né server.
 - **Profilo e avatar**: nome e avatar personalizzabile (viso, capelli, barba, vestiti, accessori, sfondo). L'avatar reagisce nelle lezioni (felice / triste) e alcuni oggetti si sbloccano giocando:
 
   | Oggetto | Come si sblocca |
