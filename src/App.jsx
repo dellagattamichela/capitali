@@ -110,7 +110,7 @@ function Home({ progress, onOpen, onStart }) {
         <span className="streak" title="Giorni di fila">🔥 {streakOn(progress, today())}</span>
         <span className="xp">⚡ {progress.xp} XP</span>
         <button type="button" className="me" onClick={() => onOpen('profilo')} aria-label="Profilo">
-          <Avatar a={progress.avatar} view="head" />
+          <Avatar a={progress.avatar} />
         </button>
       </header>
 
@@ -189,7 +189,7 @@ function PathView({ path, progress, avatar, onStart, onBack }) {
                   disabled={state === 'locked'} onClick={() => onStart(n)}
                   aria-label={`${label}${state === 'done' ? ', completata' : state === 'locked' ? ', bloccata' : ring ? `, lezione ${part + 1} di ${n.parts}` : ''}`}>
                   <img src={icon} alt="" className={n.type} />
-                  {state === 'current' && <Avatar a={avatar} view="head" className="here" />}
+                  {state === 'current' && <Avatar a={avatar} className="here" />}
                 </button>
               )
             })}
@@ -235,7 +235,7 @@ function Lesson({ path, node, questions, avatar, unlocks = [], onFinish, onWear,
           const worn = full(avatar)[slot] === name
           return (
             <div key={name} className="card unlock">
-              <Avatar a={{ ...avatar, [slot]: name }} view="head" />
+              <Avatar a={{ ...avatar, [slot]: name }} />
               <span><small>🎁 Nuovo oggetto per l'avatar!</small><strong>{name}</strong></span>
               <button type="button" className="btn ghost small" disabled={worn} onClick={() => onWear(slot, name)}>{worn ? 'Indossato' : 'Indossa'}</button>
             </div>
@@ -324,7 +324,7 @@ function Lesson({ path, node, questions, avatar, unlocks = [], onFinish, onWear,
         <div className="footer-inner">
           {done && (
             <div className="feedback" role="status">
-              <Avatar a={avatar} mood={result ? 'felice' : 'triste'} view="head" />
+              <Avatar a={avatar} mood={result ? 'felice' : 'triste'} />
               <span>
                 <strong>{result ? 'Ottimo! 🎉' : 'Risposta corretta:'}</strong>
                 {!result && <span>{expected}</span>}

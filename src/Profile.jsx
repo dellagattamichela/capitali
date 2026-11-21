@@ -5,10 +5,9 @@ import { SLOTS, full, isUnlocked, randomAvatar, unlockHint } from './avatarData.
 import { learned, streakOn, today } from './game'
 
 const TABS = [
-  { icon: '😀', label: 'Viso', slots: ['skin', 'eyes', 'brows', 'mouth', 'details'] },
-  { icon: '💇', label: 'Capelli', slots: ['hair', 'hairColor', 'beard'] },
-  { icon: '👕', label: 'Vestiti', slots: ['top', 'shirt', 'pin'] },
-  { icon: '🎩', label: 'Accessori', slots: ['hat', 'glasses', 'ears'] },
+  { icon: '😀', label: 'Viso', slots: ['skin', 'eyes', 'eyeColor', 'mouth'] },
+  { icon: '💇', label: 'Capelli', slots: ['hair', 'hairColor'] },
+  { icon: '🕶️', label: 'Accessori', slots: ['accessories', 'glassesColor', 'lensColor', 'pin'] },
   { icon: '🖼️', label: 'Sfondo', slots: ['bg'] },
 ]
 
@@ -42,9 +41,12 @@ export function Profile({ progress, onChange, onEdit, onBack }) {
           <div key={label} className="card stat"><strong>{icon} {value}</strong><small>{label}</small></div>
         ))}
       </div>
-      {/* attribuzione chiesta dalla licenza gratuita di Flaticon; quale icona è di chi, coi link: README */}
+      {/* attribuzioni chieste dalle licenze (Flaticon gratuita, CC BY 4.0); quale icona è di chi, coi link: README */}
       <footer className="credits">
-        Icone di Vectorsclub e Magnific da <a href="https://www.flaticon.com/" target="_blank" rel="noreferrer">Flaticon</a>
+        Icone di Vectorsclub e Magnific da <a href="https://www.flaticon.com/" target="_blank" rel="noreferrer">Flaticon</a>.
+        Avatar: <a href="https://www.figma.com/community/file/881358461963645496" target="_blank" rel="noreferrer">Custom Avatar</a> di
+        Ashley Seo (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a>),
+        rielaborato da <a href="https://www.dicebear.com/styles/big-smile/" target="_blank" rel="noreferrer">DiceBear</a>
       </footer>
     </main>
   )
@@ -79,22 +81,24 @@ export function AvatarEditor({ avatar, stats, onSave, onBack }) {
         <section key={slot}>
           <h2>Spilla</h2>
           <div className="choices">
-            {choice('pin', 'nessuna', 'nessuna', <Avatar a={{ ...draft, pin: 'nessuna' }} view="top" />)}
+            {choice('pin', 'nessuna', 'nessuna', <Avatar a={{ ...draft, pin: 'nessuna' }} />)}
             {stats.learned.map((c) => choice('pin', c.code, c.name, <img className="swatch" src={`https://flagcdn.com/w80/${c.code}.png`} alt="" />))}
           </div>
           {!stats.learned.length && <p className="empty">Completa un'unità per ottenere le spille con le bandiere.</p>}
         </section>
       )
     }
-    const { label, view, options } = SLOTS[slot]
+    const { label, accessory, options } = SLOTS[slot]
+    if (accessory && draft.accessories !== accessory) return null
     return (
       <section key={slot}>
         <h2>{label}</h2>
         <div className="choices">
           {Object.entries(options).filter(([, o]) => !o.hidden).map(([name, o]) =>
             choice(slot, name, name,
-              // i colori come pastiglie, le forme come anteprima ingrandita sulla zona che cambia
-              o.color && !o.front ? <span className="swatch" style={{ background: o.color }} /> : <Avatar a={{ ...draft, [slot]: name }} view={view} />,
+              // i colori come pastiglie, le varianti come anteprima dell'avatar (senza spilla, occhi e bocca ingranditi)
+              o.color ? <span className="swatch" style={{ background: o.color }} />
+                : <Avatar a={{ ...draft, pin: 'nessuna', [slot]: name }} className={slot === 'eyes' || slot === 'mouth' ? 'zoom' : ''} />,
               !isUnlocked(o, stats) && unlockHint(o)))}
         </div>
       </section>

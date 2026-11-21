@@ -54,12 +54,14 @@ Per provarla sul telefono nella stessa rete: `npm run dev -- --host` e apri l'in
 | `src/game.js` | Logica pura: sillabe, domande, lezioni, sblocchi del percorso, serie di giorni |
 | `src/App.jsx` | Schermate: home, percorso, lezione (navigazione nell'hash dell'URL, così funziona il tasto indietro) |
 | `src/Profile.jsx` | Profilo ed editor dell'avatar |
-| `src/avatarData.js` | L'avatar come dati: parti, colori, opzioni, condizioni di sblocco |
-| `src/Avatar.jsx` | Il disegno SVG dell'avatar |
+| `src/avatarData.js` | L'avatar come dati: parti, colori, varianti di DiceBear, condizioni di sblocco |
+| `src/Avatar.jsx` | L'avatar disegnato con DiceBear (stile Big Smile), più sfondo e spilla |
 | `src/*.test.js` | Test |
 | `public/` | Icona (`favicon.svg` è l'originale), PNG per il telefono, manifest |
 
 Bandiere da [flagcdn.com](https://flagcdn.com), font Nunito da Google Fonts: servono la connessione.
+Avatar: stile [Big Smile](https://www.dicebear.com/styles/big-smile/) di [DiceBear](https://www.dicebear.com), remix di [Custom Avatar](https://www.figma.com/community/file/881358461963645496) di Ashley Seo, licenza [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): anche questa attribuzione è in fondo al profilo.
+
 Icone dei passi e del lucchetto da Flaticon: la licenza gratuita chiede l'attribuzione, che nell'app è in fondo al profilo (`src/Profile.jsx`). Nel dettaglio:
 [bersaglio](https://www.flaticon.com/free-icons/bullseye) di Vectorsclub;
 [manubrio](https://www.flaticon.com/free-icons/gym), [puzzle](https://www.flaticon.com/free-icons/puzzle), [piuma](https://www.flaticon.com/free-icons/pen-drive), [quiz](https://www.flaticon.com/free-icons/quiz) e [lucchetto](https://www.flaticon.com/free-icons/lock) di Magnific.

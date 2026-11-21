@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { DEFAULT, MOODS, SLOTS, avatarStats, full, isUnlocked, newUnlocks, paint, randomAvatar, viewBox } from './avatarData.js'
+import bigSmile from '@dicebear/styles/big-smile.json' with { type: 'json' }
+import { DEFAULT, MOODS, SLOTS, avatarStats, avatarUri, full, isUnlocked, newUnlocks, randomAvatar } from './avatarData.js'
 import { nodesOf } from './game.js'
 import { PATHS } from './data.js'
 
@@ -19,17 +20,22 @@ test('gli umori usano opzioni esistenti', () => {
   for (const m of Object.values(MOODS)) for (const [slot, name] of Object.entries(m)) assert.ok(SLOTS[slot].options[name], `${slot}: ${name}`)
 })
 
-test('forme ben formate', () => {
-  const tokens = new Set(['base', 'shade', 'light', 'faint', 'cheek', 'ink'])
+test('varianti esistenti in Big Smile e avatar disegnabili', () => {
   for (const [slot, s] of Object.entries(SLOTS)) {
     for (const [name, o] of Object.entries(s.options)) {
-      for (const [token, d] of ['back', 'front'].flatMap((l) => o[l] ?? [])) {
-        assert.ok(tokens.has(token) || /^#[0-9a-f]{3,6}$/i.test(token), `${slot}/${name}: colore ${token}`)
-        assert.match(typeof d === 'function' ? d(10) : d, /^M/, `${slot}/${name}`)
-      }
+      if (o.variant) assert.ok(bigSmile.components[slot].variants[o.variant], `${slot}/${name}: ${o.variant}`)
+      if (!o.hidden) assert.match(avatarUri({ [slot]: name }), /^data:image\/svg\+xml/, `${slot}/${name}`)
     }
   }
-  assert.equal(paint('base', '#123456'), '#123456')
+  for (const mood of Object.keys(MOODS)) assert.match(avatarUri({}, mood), /^data:image\/svg\+xml/, mood)
+})
+
+test('i colori scelti arrivano al disegno', () => {
+  const has = (a, slot) => decodeURIComponent(avatarUri(a)).toLowerCase().includes(SLOTS[slot].options[a[slot]].color)
+  assert.ok(has({ eyeColor: 'azzurri' }, 'eyeColor'))
+  assert.ok(has({ accessories: 'occhiali', glassesColor: 'rossi' }, 'glassesColor'))
+  assert.ok(has({ accessories: 'da sole', lensColor: 'rosa' }, 'lensColor'))
+  assert.ok(has({ hairColor: 'verdi', hair: 'rasati' }, 'hairColor'))
 })
 
 test('full ripara gli avatar salvati', () => {
@@ -44,12 +50,12 @@ test('full ripara gli avatar salvati', () => {
 })
 
 test('sblocchi', () => {
-  const corona = SLOTS.hat.options.corona
+  const corona = SLOTS.accessories.options.corona
   assert.ok(!isUnlocked(corona, { ...ZERO, xp: 499 }))
   assert.ok(isUnlocked(corona, { ...ZERO, xp: 500 }))
   assert.deepEqual(newUnlocks({ ...ZERO, xp: 490 }, { ...ZERO, xp: 500, units: 1 }), [
-    { slot: 'hat', name: 'esploratore' },
-    { slot: 'hat', name: 'corona' },
+    { slot: 'accessories', name: 'da sole' },
+    { slot: 'accessories', name: 'corona' },
   ])
   assert.deepEqual(newUnlocks({ ...ZERO, xp: 500 }, { ...ZERO, xp: 510 }), [])
 })
@@ -71,14 +77,4 @@ test('il dado sceglie solo tra le opzioni sbloccate', () => {
     assert.ok(Object.entries(SLOTS).every(([slot, s]) => isUnlocked(s.options[a[slot]], ZERO)))
     assert.equal(a.pin, 'nessuna')
   }
-})
-
-test('le inquadrature si allargano invece di tagliare corona e capelli alti', () => {
-  const { hair: { options: hair }, hat: { options: hat } } = SLOTS
-  assert.equal(viewBox('head', hair.corti, hat.nessuno), '10 -2 80 80') // tutto dentro: inquadratura normale
-  for (const [name, h] of Object.entries(hair)) {
-    const y = Number(viewBox('head', h, hat.corona).split(' ')[1])
-    assert.ok(y <= hat.corona.reach(h.top) - 2, name)
-  }
-  assert.equal(viewBox('face', hair.afro, hat.corona), '25 25 50 50') // gli zoom sul viso restano fermi
 })

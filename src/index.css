@@ -130,8 +130,9 @@ button.card:not(:disabled):active { transform: translateY(2px); border-bottom-wi
 .score strong { font-size: 2.5rem; color: #ffc800; }
 
 /* avatar e profilo */
-.avatar { display: block; border-radius: 50%; overflow: hidden; }
-.avatar svg { display: block; width: 100%; }
+.avatar { position: relative; display: block; border-radius: 50%; overflow: hidden; }
+.avatar img { display: block; width: 100%; }
+.avatar .pin { position: absolute; left: 30%; bottom: 6%; width: 20%; aspect-ratio: 1; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #fff; }
 .avatar.big { width: 180px; margin: 0 auto; }
 .hero { position: relative; display: block; border: 0; border-radius: 16px; padding: 16px 0 0; overflow: hidden; }
 .hero .avatar { border-radius: 0; }
@@ -154,6 +155,7 @@ button.card:not(:disabled):active { transform: translateY(2px); border-bottom-wi
 .choice { display: grid; place-items: center; gap: 4px; padding: 6px; }
 .choice.selected { border-color: var(--blue-border); background: var(--blue-bg); }
 .choice .avatar { width: 100%; }
+.avatar.zoom img { scale: 1.8; transform-origin: 64% 52%; }
 .swatch { width: 52px; aspect-ratio: 1; border-radius: 50%; border: 2px solid rgb(0 0 0 / .1); }
 
 /* editor dell'avatar */
