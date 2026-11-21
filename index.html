@@ -14,7 +14,9 @@
     <style>
       /* schermata iniziale: il mappamondo e la puntina che ci cade sopra formano l'icona; la toglie main.jsx */
       #splash { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: #f7f7f7; }
-      #splash svg { width: min(60vw, 260px); overflow: visible; }
+      #splash svg { width: 240px; overflow: visible; } /* 240px: 1 unità del disegno = 240/512 px, conta per la caduta */
+      /* dalla home dell'iPhone la pagina comincia sotto la barra di stato: senza alzarlo il disegno sembra basso */
+      #splash svg { translate: 0 -32px; }
       /* il mondo arriva rotolando da sinistra: un giro intero = 2π × raggio (142) ≈ 892, così non slitta */
       #splash .globe { transform-origin: 256px 300px; animation: roll .9s cubic-bezier(.3, .7, .4, 1) both; }
       #splash .ground { animation: slide .9s cubic-bezier(.3, .7, .4, 1) both; }
@@ -23,7 +25,8 @@
       @keyframes roll { from { transform: translateX(-892px) rotate(-360deg); opacity: 0; } 15% { opacity: 1; } }
       @keyframes slide { from { transform: translateX(-892px); opacity: 0; } 15% { opacity: 1; } }
       @keyframes drop {
-        from { transform: translateY(-520px); animation-timing-function: cubic-bezier(.5, 0, 1, 1); } /* cade accelerando */
+        /* parte da fuori schermo: 120vh in unità del disegno sono ~56vh sullo schermo, più di quanto la separa dal bordo in alto */
+        from { transform: translateY(-120vh); animation-timing-function: cubic-bezier(.5, 0, 1, 1); } /* cade accelerando */
         50% { transform: scale(1.15, .85); animation-timing-function: ease-out; } /* si schiaccia toccando il mondo */
         70% { transform: translateY(-36px); animation-timing-function: ease-in; } /* rimbalzo */
         85%, to { transform: none; }
