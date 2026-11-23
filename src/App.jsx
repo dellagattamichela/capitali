@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PATHS } from './data'
-import { STEPS, XP_PER_LESSON, finishLesson, isOpen, jumpTest, learned, makeLesson, nodesOf, normalize, partOf, streakOn, today } from './game'
+import { STEPS, XP_PER_LESSON, finishLesson, isOpen, jumpTest, learned, makeLesson, nodesOf, normalize, partOf, practice, streakOn, today } from './game'
 import { AvatarEditor, Profile } from './Profile'
 import { Avatar } from './Avatar.jsx'
 import { avatarStats, full, newUnlocks } from './avatarData.js'
@@ -93,16 +93,18 @@ export default function App() {
       onStart={(p, n) => {
         history.pushState(null, '', `#${p.id}`) // uscendo dalla lezione si torna al percorso
         start(p, n)
-      }} />
+      }}
+      onPractice={(p) => start(p, practice(p, progress.done))} />
   )
 }
 
 const count = (units) => units.reduce((n, u) => n + u.countries.length, 0)
 
-function Home({ progress, onOpen, onStart }) {
+function Home({ progress, onOpen, onStart, onPractice }) {
   const { done } = progress
   const last = PATHS.find((p) => p.id === progress.last) ?? PATHS[0]
   const next = nodesOf(last).find((n) => !done.includes(n.id))
+  const review = PATHS.map((p) => [p, learned(p, done).length]).filter(([, n]) => n)
 
   return (
     <main className="home">
@@ -138,7 +140,7 @@ function Home({ progress, onOpen, onStart }) {
               {open ? (
                 <span className="meter">
                   <span className="progress"><span style={{ width: `${pct}%` }} /></span>
-                  <small>{learned(p, done)}/{count(p.units)}</small>
+                  <small>{learned(p, done).length}/{count(p.units)}</small>
                 </span>
               ) : (
                 <small>Completa l'unità «{req.title}» per sbloccarlo</small>
@@ -147,6 +149,15 @@ function Home({ progress, onOpen, onStart }) {
           </button>
         )
       })}
+
+      {review.length > 0 && <h2>Ripasso</h2>}
+      {review.map(([p, n]) => (
+        <div key={p.id} className="card practice">
+          <span className="icon">{p.icon}</span>
+          <span className="info"><strong>{p.title}</strong><small>{n} città imparate</small></span>
+          <button type="button" className="btn ghost small" onClick={() => onPractice(p)} aria-label={`Ripassa ${p.title}`}>Ripassa</button>
+        </div>
+      ))}
     </main>
   )
 }
@@ -226,7 +237,7 @@ function Lesson({ path, node, questions, avatar, unlocks = [], onFinish, onWear,
     return (
       <main className="done">
         <Avatar a={avatar} mood="felice" className="big" />
-        <h1>{isTest ? 'Test superato!' : 'Lezione completata!'}</h1>
+        <h1>{isTest ? 'Test superato!' : node.type === 'practice' ? 'Ripasso completato!' : 'Lezione completata!'}</h1>
         <div className="row">
           <div className="card score"><small>XP</small><strong>+{XP_PER_LESSON}</strong></div>
           <div className="card score"><small>Precisione</small><strong>{Math.round((100 * questions.length) / queue.length)}%</strong></div>
@@ -303,12 +314,12 @@ function Lesson({ path, node, questions, avatar, unlocks = [], onFinish, onWear,
           <>
             <div className="answer-line">
               {answer.map((t, k) => (
-                <button type="button" key={k} className="card tile" disabled={done} onClick={() => setAnswer(answer.filter((x) => x !== t))}>{q.tiles[t]}</button>
+                <button type="button" key={k} className="card tile" disabled={done} onClick={() => setAnswer((a) => a.filter((x) => x !== t))}>{q.tiles[t]}</button>
               ))}
             </div>
             <div className="bank">
               {q.tiles.map((s, t) => (
-                <button type="button" key={t} className={`card tile ${answer.includes(t) ? 'used' : ''}`} disabled={done || answer.includes(t)} onClick={() => setAnswer([...answer, t])}>{s}</button>
+                <button type="button" key={t} className={`card tile ${answer.includes(t) ? 'used' : ''}`} disabled={done || answer.includes(t)} onClick={() => setAnswer((a) => (a.includes(t) ? a : [...a, t]))}>{s}</button>
               ))}
             </div>
           </>

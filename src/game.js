@@ -48,7 +48,11 @@ export const unitDone = (ref, done) => done.includes(`${ref}.${STEPS.length - 1}
 
 // città imparate: quelle delle unità completate
 export const learned = (path, done) =>
-  path.units.filter((u) => unitDone(`${path.id}.${u.id}`, done)).reduce((n, u) => n + u.countries.length, 0)
+  path.units.filter((u) => unitDone(`${path.id}.${u.id}`, done)).flatMap((u) => u.countries)
+
+// ripasso libero delle città imparate: domande miste, dà XP ma non fa avanzare il percorso
+// ponytail: estrazione casuale, niente ripetizione spaziata né priorità agli errori
+export const practice = (path, done) => ({ type: 'practice', s: -1, pool: learned(path, done), clears: [] })
 
 export const isOpen = (path, done) => !path.unlockedBy || unitDone(path.unlockedBy, done)
 
@@ -66,13 +70,13 @@ function pick(arr, n) {
   return out.slice(0, n)
 }
 
-export function makeLesson(path, { u, s, type }, part = 0, n = LESSON_LENGTH) {
+export function makeLesson(path, { u, s, type, pool: fixed }, part = 0, n = LESSON_LENGTH) {
   const all = path.units.flatMap((x) => x.countries) // risposte sbagliate plausibili: dallo stesso percorso
-  const unit = path.units[u].countries
+  const unit = path.units[u]?.countries
   const before = path.units.slice(0, u).flatMap((x) => x.countries)
   // dopo la prima lezione e nel ripasso tornano alcuni paesi delle unità precedenti, il test le copre tutte
-  const pool = type === 'test' ? before : type === 'review' ? [...unit, ...sample(before, 4)] : [...unit, ...(part ? sample(before, OLD) : [])]
-  const mixed = type === 'review' || type === 'test'
+  const pool = fixed ?? (type === 'test' ? before : type === 'review' ? [...unit, ...sample(before, 4)] : [...unit, ...(part ? sample(before, OLD) : [])])
+  const mixed = ['review', 'test', 'practice'].includes(type)
   const seen = new Set()
   return pick(pool, n).map((c, i) => {
     const q = makeQuestion(c, mixed ? MIXED[i % MIXED.length] : type, all)
@@ -97,7 +101,7 @@ export function finishLesson(p, pathId, node, d) {
   const part = partOf(p, node) + 1
   const ids = node.clears ?? (part >= node.parts ? [node.id] : [])
   const parts = { ...p.parts, [node.id]: part }
-  if (ids.length) delete parts[node.id]
+  if (node.clears || ids.length) delete parts[node.id] // test e ripasso libero non lasciano lezioni a metà
   return {
     ...p, // nome, avatar, ...
     done: [...new Set([...p.done, ...ids])],
@@ -106,6 +110,6 @@ export function finishLesson(p, pathId, node, d) {
     streak,
     best: Math.max(p.best ?? 0, streak),
     lastDay: d,
-    last: pathId,
+    last: node.type === 'practice' ? p.last : pathId, // il ripasso non sposta il «Continua» della home
   }
 }

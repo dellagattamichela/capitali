@@ -37,14 +37,14 @@ button.card:not(:disabled):active { transform: translateY(2px); border-bottom-wi
 .streak { color: #ff9600; }
 .xp { color: #ffc800; }
 .continue { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-color: var(--green); }
-.continue small, .path-card small { display: block; color: var(--muted); font-weight: 700; font-size: .9rem; }
-.path-card { display: flex; align-items: center; gap: 16px; text-align: left; }
+.continue small, .path-card small, .practice small { display: block; color: var(--muted); font-weight: 700; font-size: .9rem; }
+.path-card, .practice { display: flex; align-items: center; gap: 16px; text-align: left; }
 .path-card:hover:not(:disabled) { background: #f7f7f7; }
 .path-card:disabled { color: #afafaf; background: #f0f0f0; }
 .path-card.sub { margin-left: 32px; }
-.path-card .icon { font-size: 2rem; }
+.path-card .icon, .practice .icon { font-size: 2rem; }
 .path-card .icon img { display: block; width: 2.25rem; }
-.path-card .info { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.path-card .info, .practice .info { flex: 1; display: flex; flex-direction: column; gap: 6px; }
 .meter { display: flex; align-items: center; gap: 12px; }
 
 /* percorso: unità colorate a rotazione, nodi a zig-zag */

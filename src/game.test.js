@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { syllables, normalize, makeQuestion, makeLesson, nodesOf, unitDone, finishLesson, streakOn, jumpTest, isOpen, learned, partOf } from './game.js'
+import { syllables, normalize, makeQuestion, makeLesson, nodesOf, unitDone, finishLesson, streakOn, jumpTest, isOpen, learned, partOf, practice } from './game.js'
 import { PATHS } from './data.js'
 
 const ALL = PATHS.flatMap((p) => p.units.flatMap((u) => u.countries))
@@ -94,5 +94,17 @@ test('progressi e serie di giorni', () => {
   assert.equal(streakOn(p, '2026-12-03'), 0)
   const broken = finishLesson(p, 'x', { id: 'x.b.0', parts: 1 }, '2026-12-05')
   assert.deepEqual([broken.streak, broken.best, broken.name], [1, 2, 'Ada']) // il record resta, il profilo pure
-  assert.equal(learned({ id: 'x', units: [{ id: 'a', countries: [1, 2, 3] }, { id: 'b', countries: [4] }] }, p.done), 3)
+  assert.deepEqual(learned({ id: 'x', units: [{ id: 'a', countries: [1, 2, 3] }, { id: 'b', countries: [4] }] }, p.done), [1, 2, 3])
+})
+
+test('ripasso libero delle città imparate', () => {
+  const path = { id: 'x', units: [{ id: 'a', countries: ALL.slice(0, 3) }, { id: 'b', countries: ALL.slice(3, 9) }] }
+  const p = { done: ['x.a.4'], parts: { 'x.b.0': 1 }, xp: 0, streak: 0, last: 'y' }
+  const qs = makeLesson(path, practice(path, p.done))
+  assert.equal(qs.length, 10)
+  assert.ok(qs.every((q) => path.units[0].countries.some((c) => c.name === q.name)), 'solo le unità completate')
+  assert.ok(qs.every((q) => !q.isNew))
+  assert.deepEqual(new Set(qs.map((q) => q.level)), new Set(['easy', 'medium', 'hard', 'reverse']))
+  const after = finishLesson(p, 'x', practice(path, p.done), '2026-11-30')
+  assert.deepEqual([after.done, after.parts, after.xp, after.last], [p.done, p.parts, 10, 'y']) // XP sì, percorso invariato
 })

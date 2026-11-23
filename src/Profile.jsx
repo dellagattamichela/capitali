@@ -19,7 +19,7 @@ export function Profile({ progress, onChange, onEdit, onBack }) {
     ['🔥', streak, 'Giorni di fila'],
     ['⚡', progress.xp, 'XP totali'],
     ['🏅', Math.max(progress.best, streak), 'Record di giorni'],
-    ['🎓', PATHS.reduce((n, p) => n + learned(p, progress.done), 0), 'Città imparate'],
+    ['🎓', PATHS.reduce((n, p) => n + learned(p, progress.done).length, 0), 'Città imparate'],
   ]
   // mezzogiorno locale: la data non scivola al giorno prima nei fusi orari a ovest
   const since = new Date(`${progress.since}T12:00`).toLocaleDateString('it', { month: 'long', year: 'numeric' })
